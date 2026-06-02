@@ -1,0 +1,17 @@
+{
+  "name": "Konex 360",
+  "short_name": "Konex 360",
+  "description": "Noticias, integracion y campanas sociales para comunidades inclusivas en Alemania.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0B3C5D",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

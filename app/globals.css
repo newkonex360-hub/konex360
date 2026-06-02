@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+:root {
+  --navy: #0b3c5d;
+  --orange: #ff6b35;
+  --ink: #152536;
+  --muted: #637083;
+  --line: #d8e0e8;
+  --paper: #ffffff;
+  --mist: #f3f6f9;
+  --focus: #ffd166;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+}
+
+body.high-contrast {
+  --navy: #001f33;
+  --orange: #c74712;
+  --ink: #050505;
+  --muted: #1e293b;
+  --line: #111827;
+  --mist: #ffffff;
+}
+
+body.font-large {
+  font-size: 112.5%;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 50;
+  transform: translateY(-160%);
+  background: var(--focus);
+  color: #111827;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.container {
+  width: min(1120px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: clamp(3rem, 8vw, 6.5rem);
+}
+
+.section-heading {
+  max-width: 760px;
+}
+
+.eyebrow {
+  color: var(--orange);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.h2 {
+  color: var(--navy);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1.05;
+  margin-top: 0.4rem;
+}
+
+.lead {
+  color: var(--muted);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  margin-top: 1rem;
+}
+
+.btn {
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 800;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.8);
+  color: var(--navy);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--navy);
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(11, 60, 93, 0.08);
+}
+
+.icon-tile {
+  align-items: center;
+  background: rgba(255, 107, 53, 0.12);
+  border-radius: 8px;
+  color: var(--orange);
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
