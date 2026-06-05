@@ -1,14 +1,23 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   Accessibility,
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
   BookOpen,
   BriefcaseBusiness,
+  BusFront,
   CalendarDays,
-  ChevronRight,
+  CircleCheck,
+  CircleX,
+  Clock3,
+  Flag,
   Globe2,
+  GraduationCap,
+  HandHeart,
   HeartHandshake,
   Home,
   Languages,
@@ -16,31 +25,32 @@ import {
   Megaphone,
   MessageCircle,
   Newspaper,
+  Recycle,
   Search,
   Share2,
   ShieldCheck,
   UsersRound
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const languages = [
-  { code: "es", label: "Español" },
+  { code: "es", label: "EspaÃ±ol" },
   { code: "de", label: "Deutsch" },
   { code: "en", label: "English" },
-  { code: "ar", label: "العربية" },
-  { code: "ru", label: "Русский" },
-  { code: "uk", label: "Українська" }
+  { code: "ar", label: "Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©" },
+  { code: "ru", label: "Ð ÑƒÑÑÐºÐ¸Ð¹" },
+  { code: "uk", label: "Ð£ÐºÑ€Ð°Ñ—Ð½ÑÑŒÐºÐ°" }
 ];
 
 const copy = {
   es: {
     slogan: "Conectando culturas, construyendo comunidad",
     intro:
-      "Noticias verificadas, recursos de integración y campañas educativas para vivir, participar y prosperar en Alemania.",
+      "Noticias verificadas, recursos de integraciÃ³n y campaÃ±as educativas para vivir, participar y prosperar en Alemania.",
     news: "Noticias",
-    integration: "Integración",
-    campaigns: "Campañas Sociales",
-    events: "Eventos",
-    directory: "Directorio de Ayuda"
+    integration: "IntegraciÃ³n",
+    campaigns: "CampaÃ±as Sociales",
+    events: "Eventos"
   },
   de: {
     slogan: "Kulturen verbinden, Gemeinschaft gestalten",
@@ -49,8 +59,7 @@ const copy = {
     news: "Nachrichten",
     integration: "Integration",
     campaigns: "Soziale Kampagnen",
-    events: "Veranstaltungen",
-    directory: "Hilfsverzeichnis"
+    events: "Veranstaltungen"
   },
   en: {
     slogan: "Connecting cultures, building community",
@@ -59,128 +68,210 @@ const copy = {
     news: "News",
     integration: "Integration",
     campaigns: "Social Campaigns",
-    events: "Events",
-    directory: "Help Directory"
+    events: "Events"
   },
   ar: {
-    slogan: "نصل الثقافات ونبني المجتمع",
+    slogan: "Ù†ØµÙ„ Ø§Ù„Ø«Ù‚Ø§ÙØ§Øª ÙˆÙ†Ø¨Ù†ÙŠ Ø§Ù„Ù…Ø¬ØªÙ…Ø¹",
     intro:
-      "أخبار موثوقة وموارد للاندماج وحملات تعليمية للحياة والمشاركة في ألمانيا.",
-    news: "الأخبار",
-    integration: "الاندماج",
-    campaigns: "حملات اجتماعية",
-    events: "الفعاليات",
-    directory: "دليل المساعدة"
+      "Ø£Ø®Ø¨Ø§Ø± Ù…ÙˆØ«ÙˆÙ‚Ø© ÙˆÙ…ÙˆØ§Ø±Ø¯ Ù„Ù„Ø§Ù†Ø¯Ù…Ø§Ø¬ ÙˆØ­Ù…Ù„Ø§Øª ØªØ¹Ù„ÙŠÙ…ÙŠØ© Ù„Ù„Ø­ÙŠØ§Ø© ÙˆØ§Ù„Ù…Ø´Ø§Ø±ÙƒØ© ÙÙŠ Ø£Ù„Ù…Ø§Ù†ÙŠØ§.",
+    news: "Ø§Ù„Ø£Ø®Ø¨Ø§Ø±",
+    integration: "Ø§Ù„Ø§Ù†Ø¯Ù…Ø§Ø¬",
+    campaigns: "Ø­Ù…Ù„Ø§Øª Ø§Ø¬ØªÙ…Ø§Ø¹ÙŠØ©",
+    events: "Ø§Ù„ÙØ¹Ø§Ù„ÙŠØ§Øª"
   },
   ru: {
-    slogan: "Соединяем культуры, строим сообщество",
+    slogan: "Ð¡Ð¾ÐµÐ´Ð¸Ð½ÑÐµÐ¼ ÐºÑƒÐ»ÑŒÑ‚ÑƒÑ€Ñ‹, ÑÑ‚Ñ€Ð¾Ð¸Ð¼ ÑÐ¾Ð¾Ð±Ñ‰ÐµÑÑ‚Ð²Ð¾",
     intro:
-      "Проверенные новости, ресурсы интеграции и образовательные кампании для жизни в Германии.",
-    news: "Новости",
-    integration: "Интеграция",
-    campaigns: "Социальные кампании",
-    events: "События",
-    directory: "Каталог помощи"
+      "ÐŸÑ€Ð¾Ð²ÐµÑ€ÐµÐ½Ð½Ñ‹Ðµ Ð½Ð¾Ð²Ð¾ÑÑ‚Ð¸, Ñ€ÐµÑÑƒÑ€ÑÑ‹ Ð¸Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ð¸ Ð¸ Ð¾Ð±Ñ€Ð°Ð·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ðµ ÐºÐ°Ð¼Ð¿Ð°Ð½Ð¸Ð¸ Ð´Ð»Ñ Ð¶Ð¸Ð·Ð½Ð¸ Ð² Ð“ÐµÑ€Ð¼Ð°Ð½Ð¸Ð¸.",
+    news: "ÐÐ¾Ð²Ð¾ÑÑ‚Ð¸",
+    integration: "Ð˜Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ð¸Ñ",
+    campaigns: "Ð¡Ð¾Ñ†Ð¸Ð°Ð»ÑŒÐ½Ñ‹Ðµ ÐºÐ°Ð¼Ð¿Ð°Ð½Ð¸Ð¸",
+    events: "Ð¡Ð¾Ð±Ñ‹Ñ‚Ð¸Ñ"
   },
   uk: {
-    slogan: "Поєднуємо культури, будуємо спільноту",
+    slogan: "ÐŸÐ¾Ñ”Ð´Ð½ÑƒÑ”Ð¼Ð¾ ÐºÑƒÐ»ÑŒÑ‚ÑƒÑ€Ð¸, Ð±ÑƒÐ´ÑƒÑ”Ð¼Ð¾ ÑÐ¿Ñ–Ð»ÑŒÐ½Ð¾Ñ‚Ñƒ",
     intro:
-      "Перевірені новини, ресурси інтеграції та освітні кампанії для життя в Німеччині.",
-    news: "Новини",
-    integration: "Інтеграція",
-    campaigns: "Соціальні кампанії",
-    events: "Події",
-    directory: "Каталог допомоги"
+      "ÐŸÐµÑ€ÐµÐ²Ñ–Ñ€ÐµÐ½Ñ– Ð½Ð¾Ð²Ð¸Ð½Ð¸, Ñ€ÐµÑÑƒÑ€ÑÐ¸ Ñ–Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ñ–Ñ— Ñ‚Ð° Ð¾ÑÐ²Ñ–Ñ‚Ð½Ñ– ÐºÐ°Ð¼Ð¿Ð°Ð½Ñ–Ñ— Ð´Ð»Ñ Ð¶Ð¸Ñ‚Ñ‚Ñ Ð² ÐÑ–Ð¼ÐµÑ‡Ñ‡Ð¸Ð½Ñ–.",
+    news: "ÐÐ¾Ð²Ð¸Ð½Ð¸",
+    integration: "Ð†Ð½Ñ‚ÐµÐ³Ñ€Ð°Ñ†Ñ–Ñ",
+    campaigns: "Ð¡Ð¾Ñ†Ñ–Ð°Ð»ÑŒÐ½Ñ– ÐºÐ°Ð¼Ð¿Ð°Ð½Ñ–Ñ—",
+    events: "ÐŸÐ¾Ð´Ñ–Ñ—"
   }
 };
 
 const newsCategories = [
   "Leipzig",
-  "Educación",
+  "EducaciÃ³n",
   "Empleo",
   "Vivienda",
   "Salud",
-  "Integración"
+  "IntegraciÃ³n"
 ];
 
 const news = [
   {
     tag: "Leipzig",
-    title: "Nuevos puntos de asesoría para familias recién llegadas",
-    text: "Una guía rápida sobre horarios, idiomas disponibles y documentos recomendados antes de acudir.",
+    title: "Nuevos puntos de asesorÃ­a para familias reciÃ©n llegadas",
+    text: "Una guÃ­a rÃ¡pida sobre horarios, idiomas disponibles y documentos recomendados antes de acudir.",
     date: "Actualizado hoy"
   },
   {
     tag: "Empleo",
-    title: "Cómo preparar un CV alemán claro y verificable",
-    text: "Plantillas, vocabulario útil y errores frecuentes al presentar experiencia internacional.",
-    date: "Guía práctica"
+    title: "CÃ³mo preparar un CV alemÃ¡n claro y verificable",
+    text: "Plantillas, vocabulario Ãºtil y errores frecuentes al presentar experiencia internacional.",
+    date: "GuÃ­a prÃ¡ctica"
   },
   {
     tag: "Salud",
     title: "Primeros pasos para entender el sistema sanitario",
-    text: "Seguro médico, citas, urgencias y servicios de interpretación comunitaria.",
-    date: "Especial integración"
+    text: "Seguro mÃ©dico, citas, urgencias y servicios de interpretaciÃ³n comunitaria.",
+    date: "Especial integraciÃ³n"
+  }
+];
+
+type PublishedNews = {
+  id: string;
+  tag: string;
+  title: string;
+  text: string;
+  date: string;
+  source?: string;
+  originalUrl?: string;
+};
+
+type PublishedTransportAlert = {
+  id: string;
+  affectedLine: string;
+  type: string;
+  reason: string;
+  text: string;
+  source: string;
+  originalUrl: string;
+};
+
+const recyclingIntegration = [
+  {
+    title: "SeparaciÃ³n de residuos",
+    text: "Aprende quÃ© va en el contenedor azul, amarillo, marrÃ³n, negro y en los puntos de vidrio."
+  },
+  {
+    title: "DepÃ³sito Pfand",
+    text: "Botellas y latas con Pfand se devuelven en mÃ¡quinas de supermercados para recuperar el depÃ³sito."
+  },
+  {
+    title: "Convivencia en edificios",
+    text: "Respeta horarios de descanso, zonas comunes, buzones, limpieza y normas del contrato de alquiler."
+  },
+  {
+    title: "Primeros trÃ¡mites",
+    text: "InformaciÃ³n bÃ¡sica para Anmeldung, seguro mÃ©dico, escuela, cursos de idioma y asesorÃ­a comunitaria."
+  }
+];
+
+const transportGuides = [
+  {
+    title: "Billetes y abonos",
+    text: "CÃ³mo elegir ticket diario, mensual o Deutschlandticket y validar el viaje cuando corresponde."
+  },
+  {
+    title: "TranvÃ­a y bus",
+    text: "Consejos para leer horarios, paradas, conexiones y avisos de cambios en el transporte pÃºblico."
+  },
+  {
+    title: "Bicicleta y patinetes",
+    text: "Uso responsable: no bloquear aceras, rampas, entradas ni guÃ­as podotÃ¡ctiles."
+  },
+  {
+    title: "Accesibilidad",
+    text: "Prioriza rampas, ascensores, espacios reservados y apoyo a personas con movilidad reducida."
   }
 ];
 
 const integrationSections = [
   {
     icon: BookOpen,
-    title: "Aprender Alemán",
-    items: ["Recursos gratuitos", "Cursos", "Consejos para practicar cada día"]
+    title: "Aprender alemÃ¡n",
+    text: "Recursos gratuitos, cursos locales, vocabulario prÃ¡ctico y consejos para practicar cada dÃ­a."
   },
   {
-    icon: Home,
+    icon: Recycle,
     title: "Vivir en Alemania",
-    items: ["Reciclaje", "Transporte", "Convivencia", "Educación", "Sistema de salud"]
+    text: "Reciclaje, convivencia, normas del edificio, horarios de descanso y trÃ¡mites bÃ¡sicos."
   },
   {
     icon: BriefcaseBusiness,
     title: "Empleo",
-    items: ["CV alemán", "Entrevistas", "Ofertas laborales verificadas"]
+    text: "CÃ³mo preparar un CV alemÃ¡n, entrevistas, bÃºsqueda laboral y derechos bÃ¡sicos en el trabajo."
   },
   {
     icon: ShieldCheck,
     title: "Vivienda",
-    items: ["Cómo alquilar", "Derechos", "Obligaciones", "Contratos"]
+    text: "CÃ³mo alquilar, entender contratos, obligaciones, fianza y dÃ³nde buscar asesorÃ­a."
   }
 ];
 
-const campaigns = [
+const helpDirectory = [
   {
-    title: "Respeta las guías táctiles",
-    message:
-      "No bloquees las guías táctiles. Un pequeño gesto puede marcar una gran diferencia.",
-    items: ["Imagen ilustrativa", "Video", "Infografía", "Compartir en redes"]
+    title: "Ayuda para inmigrantes",
+    text: "OrientaciÃ³n inicial, idioma, formularios, acompaÃ±amiento y derivaciÃ³n a servicios locales."
   },
   {
-    title: "La accesibilidad nos beneficia a todos",
-    message:
-      "Rampas, ascensores, transporte adaptado y espacios públicos accesibles mejoran la vida diaria de toda la comunidad.",
-    items: ["Rampas", "Ascensores", "Transporte adaptado", "Espacios públicos"]
+    title: "AsesorÃ­a legal",
+    text: "Puntos de contacto para residencia, familia, trabajo, vivienda y situaciones urgentes."
   },
   {
-    title: "Diversidad funcional, igualdad de oportunidades",
-    message:
-      "Promovemos empleo, educación y participación social con autonomía, respeto y oportunidades reales.",
-    items: ["Empleo", "Educación", "Participación social"]
+    title: "Centros de empleo",
+    text: "InformaciÃ³n para bÃºsqueda laboral, reconocimiento de tÃ­tulos y formaciÃ³n profesional."
+  },
+  {
+    title: "Organizaciones sociales",
+    text: "Redes comunitarias, bancos de alimentos, apoyo familiar y actividades de integraciÃ³n."
+  },
+  {
+    title: "Apoyo discapacidad",
+    text: "Asociaciones y servicios para accesibilidad, movilidad, inclusiÃ³n y derechos."
   }
 ];
 
-const directory = [
-  "Organizaciones sociales",
-  "Ayuda para inmigrantes",
-  "Asesoría legal",
-  "Centros de empleo",
-  "Asociaciones para personas con discapacidad"
+const tactileGuideFacts = [
+  "Son superficies con relieve que se detectan con el bastÃ³n blanco o con los pies.",
+  "Ayudan a orientarse en estaciones, aceras, cruces y espacios pÃºblicos.",
+  "Aumentan la autonomÃ­a porque permiten seguir rutas seguras sin depender siempre de otra persona.",
+  "Son una seÃ±al urbana esencial: cuando se bloquean, una persona puede perder la referencia del camino."
 ];
+
+const lotseDonts = [
+  "Estacionar bicicletas sobre las guÃ­as.",
+  "Colocar patinetes elÃ©ctricos sobre las guÃ­as.",
+  "Bloquear el paso con mercancÃ­as.",
+  "Permanecer de pie sobre ellas sin necesidad.",
+  "Utilizarlas como zona de espera."
+];
+
+const lotseDos = [
+  "Mantener las guÃ­as libres.",
+  "Explicar su funciÃ³n a los niÃ±os.",
+  "Ayudar cuando sea necesario.",
+  "Respetar la accesibilidad urbana.",
+  "Reportar obstÃ¡culos peligrosos."
+];
+
+const campaignTranslations = ["EspaÃ±ol", "AlemÃ¡n", "InglÃ©s", "Ãrabe", "Ruso", "Ucraniano"];
+
+const futureLotseTopics = [
+  "Personas mayores",
+  "Perros guÃ­a",
+  "Accesibilidad urbana",
+  "Diversidad funcional"
+];
+
+const lotseValues = ["Respeto", "EmpatÃ­a", "InclusiÃ³n", "Convivencia", "Solidaridad"];
 
 const events = [
   { type: "Cultura", title: "Encuentro intercultural", date: "12 Jun", place: "Leipzig" },
-  { type: "Empleo", title: "Feria laboral multilingüe", date: "19 Jun", place: "Online + presencial" },
-  { type: "Curso", title: "Introducción al sistema educativo", date: "24 Jun", place: "Biblioteca municipal" },
-  { type: "Inclusión", title: "Taller de accesibilidad urbana", date: "30 Jun", place: "Leipzig" }
+  { type: "Empleo", title: "Feria laboral multilingÃ¼e", date: "19 Jun", place: "Online + presencial" },
+  { type: "Curso", title: "IntroducciÃ³n al sistema educativo", date: "24 Jun", place: "Biblioteca municipal" },
+  { type: "InclusiÃ³n", title: "Taller de accesibilidad urbana", date: "30 Jun", place: "Leipzig" }
 ];
 
 type LanguageCode = keyof typeof copy;
@@ -190,6 +281,9 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [contrast, setContrast] = useState(false);
   const [largeText, setLargeText] = useState(false);
+  const [activeNews, setActiveNews] = useState(0);
+  const [publishedNews, setPublishedNews] = useState<PublishedNews[]>([]);
+  const [publishedAlerts, setPublishedAlerts] = useState<PublishedTransportAlert[]>([]);
   const t = copy[language];
 
   useEffect(() => {
@@ -208,16 +302,89 @@ export default function HomePage() {
     }
   }, []);
 
-  const filteredNews = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) {
-      return news;
+  useEffect(() => {
+    if (!supabase) {
+      return;
     }
 
-    return news.filter((item) =>
+    const client = supabase;
+
+    const loadPublishedContent = async () => {
+      const [newsResult, alertResult] = await Promise.all([
+        client
+          .from("news_items")
+          .select("id,title_translated,summary_es,source,original_url,published_at,category")
+          .eq("status", "publicado")
+          .order("created_at", { ascending: false })
+          .limit(8),
+        client
+          .from("transport_alerts")
+          .select("id,affected_line,type,reason,summary_simple,source,original_url")
+          .eq("status", "publicado")
+          .order("created_at", { ascending: false })
+          .limit(8)
+      ]);
+
+      if (newsResult.data) {
+        setPublishedNews(
+          newsResult.data.map((item) => ({
+            id: item.id,
+            tag: item.category,
+            title: item.title_translated,
+            text: item.summary_es,
+            date: item.published_at ? new Date(item.published_at).toLocaleDateString("es-ES") : "Publicado",
+            source: item.source,
+            originalUrl: item.original_url
+          }))
+        );
+      }
+
+      if (alertResult.data) {
+        setPublishedAlerts(
+          alertResult.data.map((item) => ({
+            id: item.id,
+            affectedLine: item.affected_line,
+            type: item.type,
+            reason: item.reason,
+            text: item.summary_simple,
+            source: item.source,
+            originalUrl: item.original_url
+          }))
+        );
+      }
+    };
+
+    loadPublishedContent().catch(() => undefined);
+  }, []);
+
+  const filteredNews = useMemo(() => {
+    const availableNews = publishedNews.length ? publishedNews : news.map((item, index) => ({ ...item, id: `local-${index}` }));
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) {
+      return availableNews;
+    }
+
+    return availableNews.filter((item) =>
       `${item.tag} ${item.title} ${item.text}`.toLowerCase().includes(normalized)
     );
+  }, [publishedNews, query]);
+
+  const activeNewsIndex = filteredNews.length ? Math.min(activeNews, filteredNews.length - 1) : 0;
+  const featuredNews = filteredNews[activeNewsIndex];
+
+  useEffect(() => {
+    setActiveNews(0);
   }, [query]);
+
+  const showNextNews = () => {
+    setActiveNews((index) => (filteredNews.length ? (index + 1) % filteredNews.length : 0));
+  };
+
+  const showPreviousNews = () => {
+    setActiveNews((index) =>
+      filteredNews.length ? (index - 1 + filteredNews.length) % filteredNews.length : 0
+    );
+  };
 
   return (
     <>
@@ -241,10 +408,11 @@ export default function HomePage() {
           <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
             {[
               [t.news, "noticias"],
-              [t.integration, "integracion"],
-              [t.campaigns, "lotse"],
+              ["Integración", "integracion"],
+              ["Campaña Lotse", "lotse"],
+              ["Transporte", "transporte"],
+              ["Directorio", "directorio"],
               [t.events, "eventos"],
-              [t.directory, "directorio"]
             ].map(([label, target]) => (
               <a
                 className="rounded-lg px-3 py-2 text-sm font-bold text-white/90 hover:bg-white/10"
@@ -283,7 +451,7 @@ export default function HomePage() {
         <section id="inicio" className="relative min-h-[92vh] overflow-hidden pt-20 text-white">
           <Image
             src="/konex360-hero.png"
-            alt="Personas diversas en Alemania, incluyendo una persona usuaria de silla de ruedas y una persona con bastón blanco junto a guías táctiles."
+            alt="Personas diversas en Alemania, incluyendo una persona usuaria de silla de ruedas y una persona con bastÃ³n blanco junto a guÃ­as tÃ¡ctiles."
             fill
             priority
             sizes="100vw"
@@ -293,7 +461,7 @@ export default function HomePage() {
           <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#0B3C5D] via-[#0B3C5D]/82 to-transparent" />
           <div className="container relative flex min-h-[calc(92vh-5rem)] items-center py-16">
             <div className="max-w-3xl">
-              <p className="eyebrow text-[#FFB199]">Plataforma comunitaria multilingüe</p>
+              <p className="eyebrow text-[#FFB199]">Plataforma comunitaria multilingÃ¼e</p>
               <h1 className="mt-4 text-5xl font-black leading-[1.02] md:text-7xl">Konex360</h1>
               <p className="mt-5 text-2xl font-extrabold leading-tight md:text-4xl">{t.slogan}</p>
               <p className="mt-6 max-w-2xl text-lg text-white/88 md:text-xl">{t.intro}</p>
@@ -301,10 +469,11 @@ export default function HomePage() {
               <div className="mt-8 flex flex-wrap gap-3">
                 {[
                   { label: t.news, target: "noticias", Icon: Newspaper },
-                  { label: t.integration, target: "integracion", Icon: BookOpen },
-                  { label: t.campaigns, target: "lotse", Icon: Megaphone },
-                  { label: t.events, target: "eventos", Icon: CalendarDays },
-                  { label: t.directory, target: "directorio", Icon: HeartHandshake }
+                  { label: "Integración", target: "integracion", Icon: BookOpen },
+                  { label: "Campaña Lotse", target: "lotse", Icon: Megaphone },
+                  { label: "Transporte", target: "transporte", Icon: BusFront },
+                  { label: "Directorio de ayuda", target: "directorio", Icon: HeartHandshake },
+                  { label: t.events, target: "eventos", Icon: CalendarDays }
                 ].map(({ label, target, Icon }, index) => (
                   <a
                     className={`btn ${index === 0 ? "btn-primary" : "btn-secondary"}`}
@@ -331,7 +500,7 @@ export default function HomePage() {
                 Alto contraste
               </button>
               <button className="btn btn-outline" type="button" onClick={() => setLargeText((value) => !value)}>
-                Tamaño de letra
+                TamaÃ±o de letra
               </button>
             </div>
           </div>
@@ -341,10 +510,10 @@ export default function HomePage() {
           <div className="container">
             <div className="section-heading">
               <p className="eyebrow">Noticias verificadas</p>
-              <h2 className="h2">Información local para tomar mejores decisiones</h2>
+              <h2 className="h2">InformaciÃ³n local para tomar mejores decisiones</h2>
               <p className="lead">
-                Cobertura local enfocada en Leipzig, con información práctica sobre educación, empleo,
-                vivienda, salud e integración.
+                Cobertura local enfocada en Leipzig, con informaciÃ³n prÃ¡ctica sobre educaciÃ³n, empleo,
+                vivienda, salud e integraciÃ³n.
               </p>
             </div>
 
@@ -368,108 +537,392 @@ export default function HomePage() {
               </label>
             </div>
 
-            <div className="mt-8 grid gap-5 md:grid-cols-3">
-              {filteredNews.map((item) => (
-                <article className="card p-5" key={item.title}>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="rounded-lg bg-[#0B3C5D] px-3 py-1 text-sm font-bold text-white">{item.tag}</span>
-                    <span className="text-sm font-bold text-[var(--muted)]">{item.date}</span>
-                  </div>
-                  <h3 className="mt-5 text-xl font-black text-[var(--navy)]">{item.title}</h3>
-                  <p className="mt-3 text-[var(--muted)]">{item.text}</p>
-                  <div className="mt-5 flex gap-2">
-                    <button className="btn btn-outline" type="button" aria-label={`Compartir: ${item.title}`}>
-                      <Share2 aria-hidden="true" size={18} />
-                    </button>
-                    <button className="btn btn-outline" type="button" aria-label={`Comentar: ${item.title}`}>
-                      <MessageCircle aria-hidden="true" size={18} />
-                    </button>
+            {featuredNews ? (
+              <div className="mt-8 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+                <article className="card overflow-hidden">
+                  <div className="grid min-h-[360px] md:grid-cols-[0.9fr_1.1fr]">
+                    <div className="bg-[#0B3C5D] p-6 text-white">
+                      <span className="rounded-lg bg-[#FF6B35] px-3 py-1 text-sm font-bold">
+                        {featuredNews.tag}
+                      </span>
+                      <h3 className="mt-6 text-3xl font-black leading-tight md:text-5xl">
+                        {featuredNews.title}
+                      </h3>
+                      <p className="mt-4 text-white/82">{featuredNews.text}</p>
+                      <p className="mt-6 text-sm font-bold text-white/75">
+                        {activeNewsIndex + 1} de {filteredNews.length} Â· {featuredNews.date}
+                      </p>
+                    </div>
+                    <div className="flex flex-col justify-between bg-white p-6">
+                      <div>
+                        <p className="eyebrow">Carrusel de noticias</p>
+                        <h4 className="mt-3 text-2xl font-black text-[var(--navy)]">
+                          InformaciÃ³n Ãºtil para Leipzig
+                        </h4>
+                        <p className="mt-3 text-[var(--muted)]">
+                          Avanza entre titulares importantes y comparte la informaciÃ³n con tu comunidad.
+                        </p>
+                      </div>
+                      <div className="mt-8 flex flex-wrap gap-2">
+                        <button className="btn btn-outline" type="button" onClick={showPreviousNews} aria-label="Noticia anterior">
+                          <ArrowLeft aria-hidden="true" size={18} />
+                        </button>
+                        <button className="btn btn-outline" type="button" onClick={showNextNews} aria-label="Noticia siguiente">
+                          <ArrowRight aria-hidden="true" size={18} />
+                        </button>
+                        <button className="btn btn-outline" type="button" aria-label={`Compartir: ${featuredNews.title}`}>
+                          <Share2 aria-hidden="true" size={18} />
+                        </button>
+                        <button className="btn btn-outline" type="button" aria-label={`Comentar: ${featuredNews.title}`}>
+                          <MessageCircle aria-hidden="true" size={18} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </article>
-              ))}
-            </div>
+
+                <div className="grid gap-4">
+                  {filteredNews.map((item, index) => (
+                    <button
+                      className={`card p-4 text-left transition ${
+                        index === activeNewsIndex ? "border-[#FF6B35] ring-2 ring-[#FF6B35]/30" : ""
+                      }`}
+                      key={item.title}
+                      type="button"
+                      onClick={() => setActiveNews(index)}
+                    >
+                      <span className="text-sm font-black text-[var(--orange)]">{item.tag}</span>
+                      <h3 className="mt-2 text-lg font-black text-[var(--navy)]">{item.title}</h3>
+                      <p className="mt-2 text-sm text-[var(--muted)]">{item.date}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-8 rounded-lg border border-[var(--line)] bg-white p-5 font-bold text-[var(--navy)]">
+                No hay noticias que coincidan con la bÃºsqueda.
+              </p>
+            )}
           </div>
         </section>
 
         <section id="integracion" className="section bg-white">
           <div className="container">
             <div className="section-heading">
-              <p className="eyebrow">Integración</p>
-              <h2 className="h2">Recursos claros para la vida diaria en Alemania</h2>
+              <p className="eyebrow">IntegraciÃ³n</p>
+              <h2 className="h2">Recursos para adaptarse a la vida cotidiana en Leipzig</h2>
               <p className="lead">
-                Guías pensadas para personas recién llegadas, familias, estudiantes, trabajadores y voluntariado.
+                GuÃ­as simples para personas reciÃ©n llegadas: reciclaje, convivencia, primeros trÃ¡mites y hÃ¡bitos que
+                ayudan a participar mejor en la comunidad.
               </p>
             </div>
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-              {integrationSections.map(({ icon: Icon, title, items }) => (
+              {integrationSections.map(({ icon: Icon, title, text }) => (
                 <article className="card p-5" key={title}>
                   <span className="icon-tile">
                     <Icon aria-hidden="true" />
                   </span>
                   <h3 className="mt-5 text-xl font-black text-[var(--navy)]">{title}</h3>
-                  <ul className="mt-4 space-y-2 text-[var(--muted)]">
-                    {items.map((item) => (
-                      <li className="flex gap-2" key={item}>
-                        <ChevronRight className="mt-1 shrink-0 text-[var(--orange)]" aria-hidden="true" size={16} />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="mt-3 text-[var(--muted)]">{text}</p>
                 </article>
               ))}
+            </div>
+            <div className="mt-10 rounded-lg border border-[var(--line)] bg-[var(--mist)] p-5">
+              <div className="section-heading">
+                <p className="eyebrow">Reciclaje dentro de integraciÃ³n</p>
+                <h3 className="mt-2 text-2xl font-black text-[var(--navy)]">Una guÃ­a prÃ¡ctica para la vida diaria</h3>
+                <p className="lead">
+                  Separar residuos, entender el Pfand y respetar las normas de convivencia ayuda a sentirse parte de la comunidad.
+                </p>
+              </div>
+              <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {recyclingIntegration.map((item) => (
+                  <article className="rounded-lg bg-white p-4" key={item.title}>
+                    <Recycle className="text-[var(--orange)]" aria-hidden="true" />
+                    <h4 className="mt-3 font-black text-[var(--navy)]">{item.title}</h4>
+                    <p className="mt-2 text-sm text-[var(--muted)]">{item.text}</p>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="lotse" className="section bg-[#0B3C5D] text-white">
-          <div className="container">
-            <div className="section-heading">
-              <p className="eyebrow text-[#FFB199]">LOTSE - Guía hacia la inclusión</p>
-              <h2 className="text-4xl font-black leading-tight md:text-6xl">
-                Respeto, autonomía e inclusión para personas con discapacidad
-              </h2>
-              <p className="mt-5 text-lg text-white/82">
-                Campañas educativas para que la accesibilidad deje de ser una excepción y se convierta en cultura
-                cotidiana.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-5 lg:grid-cols-3">
-              {campaigns.map((campaign, index) => (
-                <article className="rounded-lg border border-white/18 bg-white/8 p-5" key={campaign.title}>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#FF6B35] text-lg font-black">
-                    {index + 1}
-                  </div>
-                  <h3 className="mt-5 text-2xl font-black">{campaign.title}</h3>
-                  <p className="mt-4 text-white/82">{campaign.message}</p>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {campaign.items.map((item) => (
-                      <span className="rounded-lg bg-white px-3 py-2 text-sm font-bold text-[#0B3C5D]" key={item}>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="directorio" className="section bg-white">
+        <section id="directorio" className="section bg-[var(--mist)]">
           <div className="container grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-            <div>
+            <div className="section-heading">
               <p className="eyebrow">Directorio de Ayuda</p>
-              <h2 className="h2">Conecta con apoyo confiable cerca de ti</h2>
+              <h2 className="h2">DÃ³nde pedir apoyo en Leipzig</h2>
               <p className="lead">
-                Un directorio preparado para crecer con filtros por ciudad, idioma, tipo de asesoría y accesibilidad.
+                Un espacio para reunir organizaciones, asesorÃ­a legal, empleo, apoyo social y servicios de inclusiÃ³n.
+                Este bloque puede crecer con telÃ©fonos, direcciones, horarios e idiomas disponibles.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {directory.map((item) => (
-                <a className="card flex items-center gap-3 p-4 font-bold text-[var(--navy)]" href="#" key={item}>
-                  <HeartHandshake className="shrink-0 text-[var(--orange)]" aria-hidden="true" />
-                  {item}
+              {helpDirectory.map((item) => (
+                <article className="card flex gap-3 p-4" key={item.title}>
+                  <HeartHandshake className="mt-1 shrink-0 text-[var(--orange)]" aria-hidden="true" />
+                  <div>
+                    <h3 className="font-black text-[var(--navy)]">{item.title}</h3>
+                    <p className="mt-2 text-sm text-[var(--muted)]">{item.text}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="lotse" className="bg-white">
+          <div className="relative min-h-[86vh] overflow-hidden bg-[#0B3C5D] text-white">
+            <Image
+              src="/lotse-campaign-hero.png"
+              alt="Persona con bastÃ³n blanco siguiendo una guÃ­a podotÃ¡ctil libre de obstÃ¡culos."
+              fill
+              sizes="100vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-[#0B3C5D]/76" />
+            <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#0B3C5D] via-[#0B3C5D]/86 to-transparent" />
+            <div className="container relative grid min-h-[86vh] items-center gap-10 py-20 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="max-w-3xl">
+                <p className="eyebrow text-[#FFB199]">CampaÃ±a Lotse</p>
+                <h2 className="mt-4 text-4xl font-black leading-tight md:text-6xl">
+                  Lotse: PequeÃ±as acciones, gran impacto
+                </h2>
+                <p className="mt-6 text-lg text-white/88 md:text-2xl">
+                  Respetar las guÃ­as podotÃ¡ctiles es respetar la independencia, la seguridad y la dignidad de miles
+                  de personas.
+                </p>
+                <a className="btn btn-primary mt-8" href="#lotse-campana">
+                  Conocer la campaÃ±a
                 </a>
+              </div>
+
+              <div className="justify-self-center rounded-lg border border-white/20 bg-white p-5 text-[#0B3C5D] shadow-2xl">
+                <Image
+                  src="/lotse-mascot.png"
+                  alt="Mascota oficial Lotse, perro guÃ­a amigable de la campaÃ±a de accesibilidad."
+                  width={360}
+                  height={360}
+                  className="aspect-square w-64 rounded-lg object-cover md:w-80"
+                />
+                <p className="mt-4 text-center text-xl font-black">LOTSE muestra el camino</p>
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {lotseValues.map((value) => (
+                    <span className="rounded-lg bg-[var(--mist)] px-3 py-2 text-center text-sm font-bold" key={value}>
+                      {value}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="lotse-campana" className="section bg-white">
+            <div className="container grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="section-heading">
+                <p className="eyebrow">Â¿Por quÃ© existen?</p>
+                <h2 className="h2">Las guÃ­as podotÃ¡ctiles son orientaciÃ³n, seguridad y autonomÃ­a</h2>
+                <p className="lead">
+                  Son parte de la accesibilidad urbana. Ayudan a personas con discapacidad visual a desplazarse con
+                  mayor independencia en estaciones, aceras y espacios pÃºblicos.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {tactileGuideFacts.map((fact, index) => (
+                  <article className="card p-5" key={fact}>
+                    <span className="icon-tile">
+                      <Flag aria-hidden="true" />
+                    </span>
+                    <h3 className="mt-4 text-lg font-black text-[var(--navy)]">Clave {index + 1}</h3>
+                    <p className="mt-2 text-[var(--muted)]">{fact}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="section bg-[var(--mist)]">
+            <div className="container">
+              <div className="section-heading">
+                <p className="eyebrow">QuÃ© no debemos hacer</p>
+                <h2 className="h2">No bloquees el camino</h2>
+              </div>
+              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                {lotseDonts.map((item) => (
+                  <article className="card border-l-4 border-l-[#C1121F] p-5" key={item}>
+                    <CircleX className="text-[#C1121F]" aria-hidden="true" size={34} />
+                    <p className="mt-4 font-bold text-[var(--navy)]">{item}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="section bg-white">
+            <div className="container">
+              <div className="section-heading">
+                <p className="eyebrow">QuÃ© debemos hacer</p>
+                <h2 className="h2">PequeÃ±as acciones que abren la ciudad</h2>
+              </div>
+              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                {lotseDos.map((item) => (
+                  <article className="card border-l-4 border-l-[#168A51] p-5" key={item}>
+                    <CircleCheck className="text-[#168A51]" aria-hidden="true" size={34} />
+                    <p className="mt-4 font-bold text-[var(--navy)]">{item}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="section bg-[#0B3C5D] text-white">
+            <div className="container grid gap-5 lg:grid-cols-2">
+              <article className="rounded-lg border border-white/18 bg-white/8 p-6">
+                <span className="icon-tile bg-white text-[#0B3C5D]">
+                  <GraduationCap aria-hidden="true" />
+                </span>
+                <p className="eyebrow mt-6 text-[#FFB199]">Mensaje para escuelas</p>
+                <h3 className="mt-3 text-3xl font-black">Estas lÃ­neas ayudan a las personas a encontrar su camino.</h3>
+                <p className="mt-4 text-white/82">
+                  Para niÃ±as y niÃ±os: cuando veas estas lÃ­neas en el suelo, dÃ©jalas libres. Son como un mapa que se
+                  puede tocar.
+                </p>
+              </article>
+
+              <article className="rounded-lg border border-white/18 bg-white/8 p-6">
+                <span className="icon-tile bg-white text-[#0B3C5D]">
+                  <HandHeart aria-hidden="true" />
+                </span>
+                <p className="eyebrow mt-6 text-[#FFB199]">Mensaje para nuevos inmigrantes</p>
+                <h3 className="mt-3 text-3xl font-black">En Alemania, las guÃ­as podotÃ¡ctiles son parte del respeto urbano.</h3>
+                <p className="mt-4 text-white/82">
+                  Indican rutas seguras para personas con discapacidad visual. No pongas bicicletas, patinetes,
+                  cajas o maletas encima. Si ves un obstÃ¡culo peligroso, repÃ³rtalo cuando sea posible.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {campaignTranslations.map((languageName) => (
+                    <span className="rounded-lg bg-white px-3 py-2 text-sm font-bold text-[#0B3C5D]" key={languageName}>
+                      {languageName}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div className="bg-white py-10">
+            <div className="container flex flex-col gap-6 rounded-lg border border-[var(--line)] p-6 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <Image src="/logo.svg" alt="Konex 360" width={170} height={40} className="h-10 w-auto" />
+                <Image src="/lotse-mascot.png" alt="Mascota Lotse, perro guÃ­a" width={72} height={72} className="h-16 w-16 rounded-lg object-cover" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-[var(--navy)]">Una ciudad accesible beneficia a todos.</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {futureLotseTopics.map((topic) => (
+                    <span className="rounded-lg bg-[var(--mist)] px-3 py-2 text-sm font-bold text-[var(--navy)]" key={topic}>
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="transporte" className="section bg-[var(--mist)]">
+          <div className="container grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="section-heading">
+              <p className="eyebrow">Transporte</p>
+              <h2 className="h2">Moverse por Leipzig con seguridad y respeto</h2>
+              <p className="lead">
+                InformaciÃ³n prÃ¡ctica para usar tranvÃ­a, bus, bicicleta y patinetes sin bloquear la accesibilidad de
+                otras personas.
+              </p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              {transportGuides.map((item) => (
+                <article className="card p-5" key={item.title}>
+                  <span className="icon-tile">
+                    <BusFront aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-xl font-black text-[var(--navy)]">{item.title}</h3>
+                  <p className="mt-3 text-[var(--muted)]">{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="alertas" className="section bg-white">
+          <div className="container">
+            <div className="section-heading">
+              <p className="eyebrow">Alertas importantes</p>
+              <h2 className="h2">Avisos revisados antes de publicarse</h2>
+              <p className="lead">
+                Los avisos de LVB, MDV, Deutsche Bahn, MRB y Stadt Leipzig se muestran aquÃ­ solo despuÃ©s de revisiÃ³n humana.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              {publishedAlerts.length ? (
+                publishedAlerts.map((alert) => (
+                  <article className="card border-l-4 border-l-[#C1121F] p-5" key={alert.id}>
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="text-[#C1121F]" aria-hidden="true" />
+                      <p className="font-black text-[var(--navy)]">
+                        {alert.type} Â· LÃ­nea {alert.affectedLine}
+                      </p>
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-[var(--orange)]">{alert.reason} Â· {alert.source}</p>
+                    <p className="mt-3 text-[var(--muted)]">{alert.text}</p>
+                    <a className="mt-3 inline-block font-bold text-[var(--navy)] underline" href={alert.originalUrl} rel="noreferrer" target="_blank">
+                      Fuente original
+                    </a>
+                  </article>
+                ))
+              ) : (
+                <article className="card p-5 md:col-span-2">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="text-[var(--orange)]" aria-hidden="true" />
+                    <p className="font-black text-[var(--navy)]">No hay alertas importantes publicadas.</p>
+                  </div>
+                  <p className="mt-3 text-[var(--muted)]">
+                    Cuando el bot de transporte detecte avisos y el equipo los publique, aparecerÃ¡n en esta secciÃ³n.
+                  </p>
+                </article>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section id="actualizaciones" className="section bg-[var(--mist)]">
+          <div className="container">
+            <div className="section-heading">
+              <p className="eyebrow">Ãšltimas actualizaciones</p>
+              <h2 className="h2">Lo mÃ¡s reciente aprobado por el equipo</h2>
+              <p className="lead">
+                Un resumen rÃ¡pido de noticias y avisos publicados despuÃ©s de revisiÃ³n editorial.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-4 lg:grid-cols-3">
+              {[...filteredNews.slice(0, 2), ...publishedAlerts.slice(0, 1).map((alert) => ({
+                id: alert.id,
+                tag: "Transporte",
+                title: `${alert.type} ${alert.affectedLine}`,
+                text: alert.text,
+                date: alert.reason
+              }))].map((item) => (
+                <article className="card p-5" key={item.id}>
+                  <div className="flex items-center gap-3">
+                    <Clock3 className="text-[var(--orange)]" aria-hidden="true" />
+                    <span className="text-sm font-black text-[var(--orange)]">{item.tag}</span>
+                  </div>
+                  <h3 className="mt-4 text-xl font-black text-[var(--navy)]">{item.title}</h3>
+                  <p className="mt-3 text-[var(--muted)]">{item.text}</p>
+                  <p className="mt-4 text-sm font-bold text-[var(--muted)]">{item.date}</p>
+                </article>
               ))}
             </div>
           </div>
@@ -481,7 +934,7 @@ export default function HomePage() {
               <p className="eyebrow">Eventos</p>
               <h2 className="h2">Calendario comunitario</h2>
               <p className="lead">
-                Eventos culturales, ferias de empleo, cursos de integración y actividades inclusivas.
+                Eventos culturales, ferias de empleo, cursos de integraciÃ³n y actividades inclusivas.
               </p>
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -510,18 +963,18 @@ export default function HomePage() {
             {[
               {
                 icon: Globe2,
-                title: "Multilingüe desde el inicio",
-                text: "Selector visible para español, alemán, inglés, árabe, ruso y ucraniano, con base lista para contenidos traducidos."
+                title: "MultilingÃ¼e desde el inicio",
+                text: "Selector visible para espaÃ±ol, alemÃ¡n, inglÃ©s, Ã¡rabe, ruso y ucraniano, con base lista para contenidos traducidos."
               },
               {
                 icon: UsersRound,
                 title: "Preparada para comunidad",
-                text: "La arquitectura contempla comentarios, chat, directorio empresarial, bolsa de empleo, cursos online y asistencia con IA."
+                text: "La arquitectura contempla comentarios, chat comunitario, bolsa de empleo, cursos online y asistencia con IA."
               },
               {
                 icon: Accessibility,
-                title: "Accesible por diseño",
-                text: "Contraste ajustable, navegación por teclado, textos alternativos, estructura semántica y controles visibles."
+                title: "Accesible por diseÃ±o",
+                text: "Contraste ajustable, navegaciÃ³n por teclado, textos alternativos, estructura semÃ¡ntica y controles visibles."
               }
             ].map(({ icon: Icon, title, text }) => (
               <article className="card p-5" key={title}>

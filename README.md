@@ -39,3 +39,7 @@ El cliente esta en `lib/supabase.ts` y devuelve `null` si las variables no estan
 - Controles de alto contraste y tamano de letra.
 - Estructura semantica, textos ALT, navegacion por teclado y enlaces de salto.
 - Base PWA con `manifest.webmanifest`, icono y `sw.js`.
+
+## Bots y panel admin
+
+La estructura para bot de noticias, bot de transporte y revisión humana está documentada en `docs/bots.md`.
