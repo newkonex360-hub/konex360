@@ -44,41 +44,13 @@ const languages = [
 
 const newsCategories = ["Leipzig", "Educación", "Empleo", "Vivienda", "Salud", "Integración"];
 
-const sampleNews = [
-  {
-    id: "sample-1",
-    tag: "Leipzig",
-    title: "Nueva guía local para personas recién llegadas",
-    text: "Konex 360 prepara información práctica sobre trámites, idioma, vivienda y servicios comunitarios en Leipzig.",
-    date: "Muestra editorial",
-    source: "Konex 360"
-  },
-  {
-    id: "sample-2",
-    tag: "Integración",
-    title: "Cómo entender el reciclaje y la convivencia en edificios",
-    text: "Una explicación sencilla sobre separación de residuos, Pfand, horarios de descanso y normas comunes.",
-    date: "Guía práctica",
-    source: "Konex 360"
-  },
-  {
-    id: "sample-3",
-    tag: "Transporte",
-    title: "Consejos para moverse en tranvía, bus y bicicleta",
-    text: "Información básica para leer horarios, respetar zonas accesibles y no bloquear guías podotáctiles.",
-    date: "Servicio comunitario",
-    source: "Konex 360"
-  }
-];
-
-type PublishedNews = {
+type Article = {
   id: string;
-  tag: string;
-  title: string;
-  text: string;
-  date: string;
-  source?: string;
-  originalUrl?: string;
+  titulo: string;
+  resumen: string;
+  imagen_principal: string | null;
+  categoria: string;
+  publicado_en: string | null;
 };
 
 type PublishedTransportAlert = {
@@ -214,7 +186,7 @@ export default function HomePage() {
   const [contrast, setContrast] = useState(false);
   const [largeText, setLargeText] = useState(false);
   const [activeNews, setActiveNews] = useState(0);
-  const [publishedNews, setPublishedNews] = useState<PublishedNews[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [publishedAlerts, setPublishedAlerts] = useState<PublishedTransportAlert[]>([]);
 
   useEffect(() => {
@@ -238,12 +210,11 @@ export default function HomePage() {
     const client = supabase;
 
     const loadPublishedContent = async () => {
-      const [newsResult, alertResult] = await Promise.all([
+      const [articlesResult, alertResult] = await Promise.all([
         client
-          .from("news_items")
-          .select("id,title_translated,summary_es,source,original_url,published_at,category")
-          .eq("status", "publicado")
-          .order("created_at", { ascending: false })
+          .from("articulos")
+          .select("id,titulo,resumen,imagen_principal,categoria,publicado_en")
+          .order("publicado_en", { ascending: false })
           .limit(8),
         client
           .from("transport_alerts")
@@ -253,18 +224,8 @@ export default function HomePage() {
           .limit(8)
       ]);
 
-      if (newsResult.data) {
-        setPublishedNews(
-          newsResult.data.map((item) => ({
-            id: item.id,
-            tag: item.category,
-            title: item.title_translated,
-            text: item.summary_es,
-            date: item.published_at ? new Date(item.published_at).toLocaleDateString("es-ES") : "Publicado",
-            source: item.source,
-            originalUrl: item.original_url
-          }))
-        );
+      if (articlesResult.data) {
+        setArticles(articlesResult.data);
       }
 
       if (alertResult.data) {
@@ -285,12 +246,11 @@ export default function HomePage() {
     loadPublishedContent().catch(() => undefined);
   }, []);
 
-  const availableNews = publishedNews.length ? publishedNews : sampleNews;
   const filteredNews = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return availableNews;
-    return availableNews.filter((item) => `${item.tag} ${item.title} ${item.text}`.toLowerCase().includes(normalized));
-  }, [availableNews, query]);
+    if (!normalized) return articles;
+    return articles.filter((item) => `${item.categoria} ${item.titulo} ${item.resumen}`.toLowerCase().includes(normalized));
+  }, [articles, query]);
 
   const activeNewsIndex = filteredNews.length ? Math.min(activeNews, filteredNews.length - 1) : 0;
   const featuredNews = filteredNews[activeNewsIndex];
@@ -434,12 +394,25 @@ export default function HomePage() {
               <div className="mt-8 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
                 <article className="card overflow-hidden">
                   <div className="grid min-h-[360px] md:grid-cols-[0.9fr_1.1fr]">
-                    <div className="bg-[#0B3C5D] p-6 text-white">
-                      <span className="rounded-lg bg-[#FF6B35] px-3 py-1 text-sm font-bold">{featuredNews.tag}</span>
-                      <h3 className="mt-6 text-3xl font-black leading-tight md:text-5xl">{featuredNews.title}</h3>
-                      <p className="mt-4 text-white/82">{featuredNews.text}</p>
+                    <div className="relative min-h-[260px] bg-[#0B3C5D] p-6 text-white">
+                      {featuredNews.imagen_principal ? (
+                        <img
+                          src={featuredNews.imagen_principal}
+                          alt={featuredNews.titulo}
+                          className="absolute inset-0 h-full w-full object-cover opacity-38"
+                        />
+                      ) : null}
+                      <div className="absolute inset-0 bg-[#0B3C5D]/62" />
+                      <div className="relative">
+                        <span className="rounded-lg bg-[#FF6B35] px-3 py-1 text-sm font-bold">{featuredNews.categoria}</span>
+                        <h3 className="mt-6 text-3xl font-black leading-tight md:text-5xl">{featuredNews.titulo}</h3>
+                        <p className="mt-4 text-white/82">{featuredNews.resumen}</p>
+                      </div>
                       <p className="mt-6 text-sm font-bold text-white/75">
-                        {activeNewsIndex + 1} de {filteredNews.length} · {featuredNews.date}
+                        {activeNewsIndex + 1} de {filteredNews.length} ·{" "}
+                        {featuredNews.publicado_en
+                          ? new Date(featuredNews.publicado_en).toLocaleDateString("es-ES")
+                          : "Sin fecha"}
                       </p>
                     </div>
                     <div className="flex flex-col justify-between bg-white p-6">
@@ -457,10 +430,10 @@ export default function HomePage() {
                         <button className="btn btn-outline" type="button" onClick={showNextNews} aria-label="Noticia siguiente">
                           <ArrowRight aria-hidden="true" size={18} />
                         </button>
-                        <button className="btn btn-outline" type="button" aria-label={`Compartir: ${featuredNews.title}`}>
+                        <button className="btn btn-outline" type="button" aria-label={`Compartir: ${featuredNews.titulo}`}>
                           <Share2 aria-hidden="true" size={18} />
                         </button>
-                        <button className="btn btn-outline" type="button" aria-label={`Comentar: ${featuredNews.title}`}>
+                        <button className="btn btn-outline" type="button" aria-label={`Comentar: ${featuredNews.titulo}`}>
                           <MessageCircle aria-hidden="true" size={18} />
                         </button>
                       </div>
@@ -478,16 +451,18 @@ export default function HomePage() {
                       type="button"
                       onClick={() => setActiveNews(index)}
                     >
-                      <span className="text-sm font-black text-[var(--orange)]">{item.tag}</span>
-                      <h3 className="mt-2 text-lg font-black text-[var(--navy)]">{item.title}</h3>
-                      <p className="mt-2 text-sm text-[var(--muted)]">{item.date}</p>
+                      <span className="text-sm font-black text-[var(--orange)]">{item.categoria}</span>
+                      <h3 className="mt-2 text-lg font-black text-[var(--navy)]">{item.titulo}</h3>
+                      <p className="mt-2 text-sm text-[var(--muted)]">
+                        {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Sin fecha"}
+                      </p>
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
               <p className="mt-8 rounded-lg border border-[var(--line)] bg-white p-5 font-bold text-[var(--navy)]">
-                No hay noticias que coincidan con la búsqueda.
+                No hay noticias disponibles.
               </p>
             )}
           </div>
@@ -779,11 +754,13 @@ export default function HomePage() {
                 <article className="card p-5" key={item.id}>
                   <div className="flex items-center gap-3">
                     <Clock3 className="text-[var(--orange)]" aria-hidden="true" />
-                    <span className="text-sm font-black text-[var(--orange)]">{item.tag}</span>
+                    <span className="text-sm font-black text-[var(--orange)]">{item.categoria}</span>
                   </div>
-                  <h3 className="mt-4 text-xl font-black text-[var(--navy)]">{item.title}</h3>
-                  <p className="mt-3 text-[var(--muted)]">{item.text}</p>
-                  <p className="mt-4 text-sm font-bold text-[var(--muted)]">{item.date}</p>
+                  <h3 className="mt-4 text-xl font-black text-[var(--navy)]">{item.titulo}</h3>
+                  <p className="mt-3 text-[var(--muted)]">{item.resumen}</p>
+                  <p className="mt-4 text-sm font-bold text-[var(--muted)]">
+                    {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Sin fecha"}
+                  </p>
                 </article>
               ))}
             </div>
