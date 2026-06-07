@@ -273,6 +273,16 @@ export default function HomePage() {
     setActiveNews(0);
   }, [query]);
 
+  useEffect(() => {
+    if (filteredNews.length < 2) return;
+
+    const intervalId = window.setInterval(() => {
+      setActiveNews((index) => (index + 1) % filteredNews.length);
+    }, 6500);
+
+    return () => window.clearInterval(intervalId);
+  }, [filteredNews.length]);
+
   const showNextNews = () => setActiveNews((index) => (filteredNews.length ? (index + 1) % filteredNews.length : 0));
   const showPreviousNews = () =>
     setActiveNews((index) => (filteredNews.length ? (index - 1 + filteredNews.length) % filteredNews.length : 0));
@@ -436,7 +446,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex flex-col justify-between bg-white p-6">
                       <div>
-                        <p className="eyebrow">Carrusel de noticias</p>
+                        <p className="eyebrow">Noticias</p>
                         <h4 className="mt-3 text-2xl font-black text-[var(--navy)]">Titulares para la comunidad</h4>
                         <p className="mt-3 text-[var(--muted)]">
                           Los bots traerán noticias públicas y el equipo las publicará solo después de revisarlas.
@@ -511,8 +521,8 @@ export default function HomePage() {
             </div>
             <div className="mt-10 rounded-lg border border-[var(--line)] bg-[var(--mist)] p-5">
               <div className="section-heading">
-                <p className="eyebrow">Reciclaje dentro de integración</p>
-                <h3 className="mt-2 text-2xl font-black text-[var(--navy)]">Una guía práctica para la vida diaria</h3>
+                <p className="eyebrow">Integración</p>
+                <h3 className="mt-2 text-2xl font-black text-[var(--navy)]">Material práctico para la vida diaria</h3>
               </div>
               <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {recyclingIntegration.map((item) => (
