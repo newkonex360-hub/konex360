@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   Accessibility,
@@ -53,6 +54,8 @@ type Article = {
   categoria: string;
   imagen_url: string | null;
   estado: string;
+  fuente_url: string | null;
+  publicado_en: string | null;
 };
 
 type PublishedTransportAlert = {
@@ -216,9 +219,9 @@ export default function HomePage() {
       const [articlesResult, alertResult] = await Promise.all([
         client
           .from("articulos")
-          .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado")
+          .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado,fuente_url,publicado_en")
           .eq("estado", "publicado")
-          .order("id", { ascending: false })
+          .order("publicado_en", { ascending: false, nullsFirst: false })
           .limit(8),
         client
           .from("transport_alerts")
@@ -452,6 +455,9 @@ export default function HomePage() {
                         <button className="btn btn-outline" type="button" aria-label={`Comentar: ${featuredNews.titulo}`}>
                           <MessageCircle aria-hidden="true" size={18} />
                         </button>
+                        <Link className="btn btn-primary" href={`/noticias/${featuredNews.slug ?? featuredNews.id}`}>
+                          Leer noticia completa
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -459,20 +465,19 @@ export default function HomePage() {
 
                 <div className="grid gap-4">
                   {filteredNews.map((item, index) => (
-                    <button
-                      className={`card p-4 text-left transition ${
+                    <Link
+                      className={`card block p-4 text-left no-underline transition hover:-translate-y-1 hover:shadow-xl ${
                         index === activeNewsIndex ? "border-[#FF6B35] ring-2 ring-[#FF6B35]/30" : ""
                       }`}
+                      href={`/noticias/${item.slug ?? item.id}`}
                       key={item.id}
-                      type="button"
-                      onClick={() => setActiveNews(index)}
                     >
                       <span className="text-sm font-black text-[var(--orange)]">{item.categoria}</span>
                       <h3 className="mt-2 text-lg font-black text-[var(--navy)]">{item.titulo}</h3>
                       <p className="mt-2 text-sm text-[var(--muted)]">
-                        Estado: {item.estado}
+                        {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Leer noticia"}
                       </p>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -767,15 +772,17 @@ export default function HomePage() {
             </div>
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
               {filteredNews.slice(0, 3).map((item) => (
-                <article className="card p-5" key={item.id}>
+                <Link className="card block p-5 no-underline transition hover:-translate-y-1 hover:shadow-xl" href={`/noticias/${item.slug ?? item.id}`} key={item.id}>
                   <div className="flex items-center gap-3">
                     <Clock3 className="text-[var(--orange)]" aria-hidden="true" />
                     <span className="text-sm font-black text-[var(--orange)]">{item.categoria}</span>
                   </div>
                   <h3 className="mt-4 text-xl font-black text-[var(--navy)]">{item.titulo}</h3>
                   <p className="mt-3 text-[var(--muted)]">{item.resumen}</p>
-                  <p className="mt-4 text-sm font-bold text-[var(--muted)]">Estado: {item.estado}</p>
-                </article>
+                  <p className="mt-4 text-sm font-bold text-[var(--muted)]">
+                    {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Leer noticia"}
+                  </p>
+                </Link>
               ))}
             </div>
           </div>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Newspaper, Search, Share2 } from "lucide-react";
 import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +14,8 @@ type Article = {
   categoria: string;
   imagen_url: string | null;
   estado: string;
+  fuente_url: string | null;
+  publicado_en: string | null;
 };
 
 type ArticleResult = {
@@ -30,9 +33,9 @@ async function getArticles(): Promise<ArticleResult> {
 
   const { data, error } = await supabase
     .from("articulos")
-    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado")
+    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado,fuente_url,publicado_en")
     .eq("estado", "publicado")
-    .order("id", { ascending: false });
+    .order("publicado_en", { ascending: false, nullsFirst: false });
 
   return {
     articles: data ?? [],
@@ -78,7 +81,7 @@ export default async function NoticiasPage() {
             ) : null}
 
             {featured ? (
-              <article className="card mt-8 overflow-hidden">
+              <Link className="card mt-8 block overflow-hidden no-underline transition hover:-translate-y-1 hover:shadow-xl" href={`/noticias/${featured.slug ?? featured.id}`}>
                 <div className="grid md:grid-cols-[1.05fr_0.95fr]">
                   <div className="relative min-h-[320px] bg-[#0B3C5D]">
                     {featured.imagen_url ? (
@@ -93,10 +96,12 @@ export default async function NoticiasPage() {
                     <p className="eyebrow">Destacada</p>
                     <h2 className="mt-3 text-3xl font-black leading-tight text-[var(--navy)]">{featured.titulo}</h2>
                     <p className="mt-4 text-[var(--muted)]">{featured.resumen}</p>
-                    <p className="mt-5 text-sm font-bold text-[var(--muted)]">Estado: {featured.estado}</p>
+                    <p className="mt-5 text-sm font-bold text-[var(--muted)]">
+                      {featured.publicado_en ? new Date(featured.publicado_en).toLocaleDateString("es-ES") : "Leer noticia completa"}
+                    </p>
                   </div>
                 </div>
-              </article>
+              </Link>
             ) : (
               <p className="mt-8 rounded-lg border border-[var(--line)] bg-white p-5 font-bold text-[var(--navy)]">
                 No hay noticias disponibles.
@@ -105,18 +110,22 @@ export default async function NoticiasPage() {
 
             <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {articles.slice(1).map((article) => (
-                <article className="card overflow-hidden" key={article.id}>
+                <Link
+                  className="card block overflow-hidden no-underline transition hover:-translate-y-1 hover:shadow-xl"
+                  href={`/noticias/${article.slug ?? article.id}`}
+                  key={article.id}
+                >
                   {article.imagen_url ? <img src={article.imagen_url} alt={article.titulo} className="h-44 w-full object-cover" /> : null}
                   <div className="p-5">
                     <span className="text-sm font-black text-[var(--orange)]">{article.categoria}</span>
                     <h2 className="mt-2 text-xl font-black text-[var(--navy)]">{article.titulo}</h2>
                     <p className="mt-3 text-sm text-[var(--muted)]">{article.resumen}</p>
-                    <button className="btn btn-outline mt-5" type="button" aria-label={`Compartir ${article.titulo}`}>
+                    <span className="btn btn-outline mt-5" aria-label={`Abrir ${article.titulo}`}>
                       <Share2 aria-hidden="true" size={18} />
-                      Compartir
-                    </button>
+                      Leer noticia
+                    </span>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           </div>

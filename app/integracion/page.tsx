@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BookOpen, BriefcaseBusiness, Home, Recycle, ShieldCheck } from "lucide-react";
 import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +14,8 @@ type Article = {
   categoria: string;
   imagen_url: string | null;
   estado: string;
+  fuente_url: string | null;
+  publicado_en: string | null;
 };
 
 const guides = [
@@ -46,10 +49,10 @@ async function getIntegrationArticles(): Promise<ArticleResult> {
 
   const { data, error } = await supabase
     .from("articulos")
-    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado")
+    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado,fuente_url,publicado_en")
     .eq("estado", "publicado")
     .or("categoria.ilike.integracion,categoria.ilike.integración")
-    .order("id", { ascending: false });
+    .order("publicado_en", { ascending: false, nullsFirst: false });
 
   return {
     articles: data ?? [],
@@ -122,14 +125,19 @@ export default async function IntegracionPage() {
             {articles.length ? (
               <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {articles.map((article) => (
-                  <article className="card overflow-hidden" key={article.id}>
+                  <Link
+                    className="card block overflow-hidden no-underline transition hover:-translate-y-1 hover:shadow-xl"
+                    href={`/noticias/${article.slug ?? article.id}`}
+                    key={article.id}
+                  >
                     {article.imagen_url ? <img src={article.imagen_url} alt={article.titulo} className="h-44 w-full object-cover" /> : null}
                     <div className="p-5">
                       <span className="text-sm font-black text-[var(--orange)]">{article.categoria}</span>
                       <h3 className="mt-2 text-xl font-black text-[var(--navy)]">{article.titulo}</h3>
                       <p className="mt-3 text-sm text-[var(--muted)]">{article.resumen}</p>
+                      <span className="btn btn-outline mt-5">Leer contenido</span>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             ) : (
