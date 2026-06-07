@@ -214,6 +214,7 @@ export default function HomePage() {
         client
           .from("articulos")
           .select("id,titulo,resumen,imagen_principal,categoria,publicado_en")
+          .eq("estado", "publicado")
           .order("publicado_en", { ascending: false })
           .limit(8),
         client
@@ -277,14 +278,14 @@ export default function HomePage() {
 
           <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
             {[
-              ["Noticias", "noticias"],
-              ["Integración", "integracion"],
-              ["Campaña Lotse", "lotse"],
-              ["Transporte", "transporte"],
-              ["Directorio", "directorio"],
-              ["Eventos", "eventos"]
+              ["Noticias", "/noticias"],
+              ["Integración", "/integracion"],
+              ["Campaña Lotse", "/campanas/lotse"],
+              ["Transporte", "/transporte"],
+              ["Directorio", "#directorio"],
+              ["Eventos", "/eventos"]
             ].map(([label, target]) => (
-              <a className="rounded-lg px-3 py-2 text-sm font-bold text-white/90 hover:bg-white/10" href={`#${target}`} key={target}>
+              <a className="rounded-lg px-3 py-2 text-sm font-bold text-white/90 hover:bg-white/10" href={target} key={target}>
                 {label}
               </a>
             ))}
@@ -326,14 +327,14 @@ export default function HomePage() {
 
               <div className="mt-8 flex flex-wrap gap-3">
                 {[
-                  { label: "Noticias", target: "noticias", Icon: Newspaper },
-                  { label: "Integración", target: "integracion", Icon: BookOpen },
-                  { label: "Campaña Lotse", target: "lotse", Icon: Megaphone },
-                  { label: "Transporte", target: "transporte", Icon: BusFront },
-                  { label: "Directorio de ayuda", target: "directorio", Icon: HeartHandshake },
-                  { label: "Eventos", target: "eventos", Icon: CalendarDays }
+                  { label: "Noticias", target: "/noticias", Icon: Newspaper },
+                  { label: "Integración", target: "/integracion", Icon: BookOpen },
+                  { label: "Campaña Lotse", target: "/campanas/lotse", Icon: Megaphone },
+                  { label: "Transporte", target: "/transporte", Icon: BusFront },
+                  { label: "Directorio de ayuda", target: "#directorio", Icon: HeartHandshake },
+                  { label: "Eventos", target: "/eventos", Icon: CalendarDays }
                 ].map(({ label, target, Icon }, index) => (
-                  <a className={`btn ${index === 0 ? "btn-primary" : "btn-secondary"}`} href={`#${target}`} key={target}>
+                  <a className={`btn ${index === 0 ? "btn-primary" : "btn-secondary"}`} href={target} key={target}>
                     <Icon aria-hidden="true" size={19} />
                     {label}
                   </a>
