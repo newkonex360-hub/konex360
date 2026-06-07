@@ -46,11 +46,13 @@ const newsCategories = ["Leipzig", "Educación", "Empleo", "Vivienda", "Salud", 
 
 type Article = {
   id: string;
+  slug: string | null;
   titulo: string;
   resumen: string;
-  imagen_principal: string | null;
+  contenido: string | null;
   categoria: string;
-  publicado_en: string | null;
+  imagen_url: string | null;
+  estado: string;
 };
 
 type PublishedTransportAlert = {
@@ -187,6 +189,7 @@ export default function HomePage() {
   const [largeText, setLargeText] = useState(false);
   const [activeNews, setActiveNews] = useState(0);
   const [articles, setArticles] = useState<Article[]>([]);
+  const [supabaseArticleError, setSupabaseArticleError] = useState<string | null>(null);
   const [publishedAlerts, setPublishedAlerts] = useState<PublishedTransportAlert[]>([]);
 
   useEffect(() => {
@@ -213,9 +216,9 @@ export default function HomePage() {
       const [articlesResult, alertResult] = await Promise.all([
         client
           .from("articulos")
-          .select("id,titulo,resumen,imagen_principal,categoria,publicado_en")
+          .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado")
           .eq("estado", "publicado")
-          .order("publicado_en", { ascending: false })
+          .order("id", { ascending: false })
           .limit(8),
         client
           .from("transport_alerts")
@@ -225,8 +228,15 @@ export default function HomePage() {
           .limit(8)
       ]);
 
+      if (articlesResult.error) {
+        setSupabaseArticleError(
+          `${articlesResult.error.message}${articlesResult.error.details ? ` Detalles: ${articlesResult.error.details}` : ""}`
+        );
+      }
+
       if (articlesResult.data) {
         setArticles(articlesResult.data);
+        setSupabaseArticleError(null);
       }
 
       if (alertResult.data) {
@@ -280,7 +290,7 @@ export default function HomePage() {
             {[
               ["Noticias", "/noticias"],
               ["Integración", "/integracion"],
-              ["Campaña Lotse", "/campanas/lotse"],
+              ["Campaña Lotse", "/campana-lotse"],
               ["Transporte", "/transporte"],
               ["Directorio", "#directorio"],
               ["Eventos", "/eventos"]
@@ -329,7 +339,7 @@ export default function HomePage() {
                 {[
                   { label: "Noticias", target: "/noticias", Icon: Newspaper },
                   { label: "Integración", target: "/integracion", Icon: BookOpen },
-                  { label: "Campaña Lotse", target: "/campanas/lotse", Icon: Megaphone },
+                  { label: "Campaña Lotse", target: "/campana-lotse", Icon: Megaphone },
                   { label: "Transporte", target: "/transporte", Icon: BusFront },
                   { label: "Directorio de ayuda", target: "#directorio", Icon: HeartHandshake },
                   { label: "Eventos", target: "/eventos", Icon: CalendarDays }
@@ -391,14 +401,21 @@ export default function HomePage() {
               </label>
             </div>
 
+            {supabaseArticleError ? (
+              <div className="mt-6 rounded-lg border border-[#C1121F] bg-white p-5 text-[#8A0F18]" role="alert">
+                <p className="font-black">Error de Supabase</p>
+                <p className="mt-2 text-sm">{supabaseArticleError}</p>
+              </div>
+            ) : null}
+
             {featuredNews ? (
               <div className="mt-8 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
                 <article className="card overflow-hidden">
                   <div className="grid min-h-[360px] md:grid-cols-[0.9fr_1.1fr]">
                     <div className="relative min-h-[260px] bg-[#0B3C5D] p-6 text-white">
-                      {featuredNews.imagen_principal ? (
+                      {featuredNews.imagen_url ? (
                         <img
-                          src={featuredNews.imagen_principal}
+                          src={featuredNews.imagen_url}
                           alt={featuredNews.titulo}
                           className="absolute inset-0 h-full w-full object-cover opacity-38"
                         />
@@ -411,9 +428,7 @@ export default function HomePage() {
                       </div>
                       <p className="mt-6 text-sm font-bold text-white/75">
                         {activeNewsIndex + 1} de {filteredNews.length} ·{" "}
-                        {featuredNews.publicado_en
-                          ? new Date(featuredNews.publicado_en).toLocaleDateString("es-ES")
-                          : "Sin fecha"}
+                        Estado: {featuredNews.estado}
                       </p>
                     </div>
                     <div className="flex flex-col justify-between bg-white p-6">
@@ -455,7 +470,7 @@ export default function HomePage() {
                       <span className="text-sm font-black text-[var(--orange)]">{item.categoria}</span>
                       <h3 className="mt-2 text-lg font-black text-[var(--navy)]">{item.titulo}</h3>
                       <p className="mt-2 text-sm text-[var(--muted)]">
-                        {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Sin fecha"}
+                        Estado: {item.estado}
                       </p>
                     </button>
                   ))}
@@ -759,9 +774,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="mt-4 text-xl font-black text-[var(--navy)]">{item.titulo}</h3>
                   <p className="mt-3 text-[var(--muted)]">{item.resumen}</p>
-                  <p className="mt-4 text-sm font-bold text-[var(--muted)]">
-                    {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Sin fecha"}
-                  </p>
+                  <p className="mt-4 text-sm font-bold text-[var(--muted)]">Estado: {item.estado}</p>
                 </article>
               ))}
             </div>

@@ -6,11 +6,13 @@ export const dynamic = "force-dynamic";
 
 type Article = {
   id: string;
+  slug: string | null;
   titulo: string;
   resumen: string;
-  imagen_principal: string | null;
+  contenido: string | null;
   categoria: string;
-  publicado_en: string | null;
+  imagen_url: string | null;
+  estado: string;
 };
 
 const guides = [
@@ -29,21 +31,34 @@ const recycling = [
   { title: "Pfand", text: "Botellas y latas con deposito se devuelven en supermercados." }
 ];
 
-async function getIntegrationArticles(): Promise<Article[]> {
-  if (!supabase) return [];
+type ArticleResult = {
+  articles: Article[];
+  error: string | null;
+};
 
-  const { data } = await supabase
+async function getIntegrationArticles(): Promise<ArticleResult> {
+  if (!supabase) {
+    return {
+      articles: [],
+      error: "Supabase no esta configurado. Revisa NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
+    };
+  }
+
+  const { data, error } = await supabase
     .from("articulos")
-    .select("id,titulo,resumen,imagen_principal,categoria,publicado_en")
+    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado")
     .eq("estado", "publicado")
-    .or("categoria.eq.integracion,categoria.eq.integración")
-    .order("publicado_en", { ascending: false });
+    .or("categoria.ilike.integracion,categoria.ilike.integración")
+    .order("id", { ascending: false });
 
-  return data ?? [];
+  return {
+    articles: data ?? [],
+    error: error ? `${error.message}${error.details ? ` Detalles: ${error.details}` : ""}` : null
+  };
 }
 
 export default async function IntegracionPage() {
-  const articles = await getIntegrationArticles();
+  const { articles, error } = await getIntegrationArticles();
 
   return (
     <>
@@ -97,11 +112,18 @@ export default async function IntegracionPage() {
               <h2 className="h2">Contenido publicado desde Supabase</h2>
             </div>
 
+            {error ? (
+              <div className="mt-6 rounded-lg border border-[#C1121F] bg-white p-5 text-[#8A0F18]" role="alert">
+                <p className="font-black">Error de Supabase</p>
+                <p className="mt-2 text-sm">{error}</p>
+              </div>
+            ) : null}
+
             {articles.length ? (
               <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {articles.map((article) => (
                   <article className="card overflow-hidden" key={article.id}>
-                    {article.imagen_principal ? <img src={article.imagen_principal} alt={article.titulo} className="h-44 w-full object-cover" /> : null}
+                    {article.imagen_url ? <img src={article.imagen_url} alt={article.titulo} className="h-44 w-full object-cover" /> : null}
                     <div className="p-5">
                       <span className="text-sm font-black text-[var(--orange)]">{article.categoria}</span>
                       <h3 className="mt-2 text-xl font-black text-[var(--navy)]">{article.titulo}</h3>

@@ -6,6 +6,7 @@ const links = [
   { label: "Noticias", href: "/noticias" },
   { label: "Integracion", href: "/integracion" },
   { label: "Campanas", href: "/campanas" },
+  { label: "Lotse", href: "/campana-lotse" },
   { label: "Transporte", href: "/transporte" },
   { label: "Eventos", href: "/eventos" },
   { label: "Contacto", href: "/contacto" }

@@ -6,27 +6,42 @@ export const dynamic = "force-dynamic";
 
 type Article = {
   id: string;
+  slug: string | null;
   titulo: string;
   resumen: string;
-  imagen_principal: string | null;
+  contenido: string | null;
   categoria: string;
-  publicado_en: string | null;
+  imagen_url: string | null;
+  estado: string;
 };
 
-async function getArticles(): Promise<Article[]> {
-  if (!supabase) return [];
+type ArticleResult = {
+  articles: Article[];
+  error: string | null;
+};
 
-  const { data } = await supabase
+async function getArticles(): Promise<ArticleResult> {
+  if (!supabase) {
+    return {
+      articles: [],
+      error: "Supabase no esta configurado. Revisa NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
+    };
+  }
+
+  const { data, error } = await supabase
     .from("articulos")
-    .select("id,titulo,resumen,imagen_principal,categoria,publicado_en")
+    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado")
     .eq("estado", "publicado")
-    .order("publicado_en", { ascending: false });
+    .order("id", { ascending: false });
 
-  return data ?? [];
+  return {
+    articles: data ?? [],
+    error: error ? `${error.message}${error.details ? ` Detalles: ${error.details}` : ""}` : null
+  };
 }
 
 export default async function NoticiasPage() {
-  const articles = await getArticles();
+  const { articles, error } = await getArticles();
   const featured = articles[0];
 
   return (
@@ -55,12 +70,19 @@ export default async function NoticiasPage() {
               </label>
             </div>
 
+            {error ? (
+              <div className="mt-6 rounded-lg border border-[#C1121F] bg-white p-5 text-[#8A0F18]" role="alert">
+                <p className="font-black">Error de Supabase</p>
+                <p className="mt-2 text-sm">{error}</p>
+              </div>
+            ) : null}
+
             {featured ? (
               <article className="card mt-8 overflow-hidden">
                 <div className="grid md:grid-cols-[1.05fr_0.95fr]">
                   <div className="relative min-h-[320px] bg-[#0B3C5D]">
-                    {featured.imagen_principal ? (
-                      <img src={featured.imagen_principal} alt={featured.titulo} className="absolute inset-0 h-full w-full object-cover" />
+                    {featured.imagen_url ? (
+                      <img src={featured.imagen_url} alt={featured.titulo} className="absolute inset-0 h-full w-full object-cover" />
                     ) : null}
                     <div className="absolute inset-0 bg-[#0B3C5D]/50" />
                     <div className="relative flex h-full min-h-[320px] items-end p-6 text-white">
@@ -71,9 +93,7 @@ export default async function NoticiasPage() {
                     <p className="eyebrow">Destacada</p>
                     <h2 className="mt-3 text-3xl font-black leading-tight text-[var(--navy)]">{featured.titulo}</h2>
                     <p className="mt-4 text-[var(--muted)]">{featured.resumen}</p>
-                    <p className="mt-5 text-sm font-bold text-[var(--muted)]">
-                      {featured.publicado_en ? new Date(featured.publicado_en).toLocaleDateString("es-ES") : "Sin fecha"}
-                    </p>
+                    <p className="mt-5 text-sm font-bold text-[var(--muted)]">Estado: {featured.estado}</p>
                   </div>
                 </div>
               </article>
@@ -86,7 +106,7 @@ export default async function NoticiasPage() {
             <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {articles.slice(1).map((article) => (
                 <article className="card overflow-hidden" key={article.id}>
-                  {article.imagen_principal ? <img src={article.imagen_principal} alt={article.titulo} className="h-44 w-full object-cover" /> : null}
+                  {article.imagen_url ? <img src={article.imagen_url} alt={article.titulo} className="h-44 w-full object-cover" /> : null}
                   <div className="p-5">
                     <span className="text-sm font-black text-[var(--orange)]">{article.categoria}</span>
                     <h2 className="mt-2 text-xl font-black text-[var(--navy)]">{article.titulo}</h2>

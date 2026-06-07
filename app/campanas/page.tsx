@@ -6,7 +6,7 @@ const campaigns = [
   {
     title: "Lotse: pequenas acciones, gran impacto",
     text: "Campana para respetar las guias podotactiles y proteger la autonomia de personas con discapacidad visual.",
-    href: "/campanas/lotse",
+    href: "/campana-lotse",
     icon: ShieldCheck
   },
   {
