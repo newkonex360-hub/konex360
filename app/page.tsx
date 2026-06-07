@@ -24,11 +24,9 @@ import {
   Languages,
   MapPin,
   Megaphone,
-  MessageCircle,
   Newspaper,
   Recycle,
   Search,
-  Share2,
   ShieldCheck,
   UsersRound
 } from "lucide-react";
@@ -422,74 +420,46 @@ export default function HomePage() {
             ) : null}
 
             {featuredNews ? (
-              <div className="mt-8 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="mt-8">
                 <article className="card overflow-hidden">
-                  <div className="grid min-h-[360px] md:grid-cols-[0.9fr_1.1fr]">
-                    <div className="relative min-h-[260px] bg-[#0B3C5D] p-6 text-white">
+                  <div className="grid min-h-[560px] lg:grid-cols-[1.2fr_0.8fr]">
+                    <div className="relative min-h-[360px] bg-[#0B3C5D] p-6 text-white md:p-8 lg:min-h-[560px]">
                       {featuredNews.imagen_url ? (
                         <img
                           src={featuredNews.imagen_url}
                           alt={featuredNews.titulo}
-                          className="absolute inset-0 h-full w-full object-cover opacity-38"
+                          className="absolute inset-0 h-full w-full object-cover opacity-48"
                         />
                       ) : null}
-                      <div className="absolute inset-0 bg-[#0B3C5D]/62" />
-                      <div className="relative">
-                        <span className="rounded-lg bg-[#FF6B35] px-3 py-1 text-sm font-bold">{featuredNews.categoria}</span>
-                        <h3 className="mt-6 text-3xl font-black leading-tight md:text-5xl">{featuredNews.titulo}</h3>
-                        <p className="mt-4 text-white/82">{featuredNews.resumen}</p>
+                      <div className="absolute inset-0 bg-[#0B3C5D]/66" />
+                      <div className="relative flex min-h-[300px] flex-col justify-end lg:min-h-[496px]">
+                        <span className="w-fit rounded-lg bg-[#FF6B35] px-3 py-1 text-sm font-black">{featuredNews.categoria}</span>
+                        <h3 className="mt-6 max-w-3xl text-4xl font-black leading-tight md:text-6xl">{featuredNews.titulo}</h3>
                       </div>
-                      <p className="mt-6 text-sm font-bold text-white/75">
-                        {activeNewsIndex + 1} de {filteredNews.length} ·{" "}
-                        Estado: {featuredNews.estado}
-                      </p>
                     </div>
-                    <div className="flex flex-col justify-between bg-white p-6">
+                    <div className="flex flex-col justify-between bg-white p-6 md:p-8">
                       <div>
                         <p className="eyebrow">Noticias</p>
-                        <h4 className="mt-3 text-2xl font-black text-[var(--navy)]">Titulares para la comunidad</h4>
-                        <p className="mt-3 text-[var(--muted)]">
-                          Los bots traerán noticias públicas y el equipo las publicará solo después de revisarlas.
-                        </p>
+                        <h4 className="mt-3 text-3xl font-black leading-tight text-[var(--navy)]">Información para la comunidad</h4>
+                        <p className="mt-5 text-lg leading-8 text-[var(--muted)]">{featuredNews.resumen}</p>
                       </div>
-                      <div className="mt-8 flex flex-wrap gap-2">
+                      <div className="mt-8 flex flex-wrap items-center gap-2">
                         <button className="btn btn-outline" type="button" onClick={showPreviousNews} aria-label="Noticia anterior">
                           <ArrowLeft aria-hidden="true" size={18} />
                         </button>
                         <button className="btn btn-outline" type="button" onClick={showNextNews} aria-label="Noticia siguiente">
                           <ArrowRight aria-hidden="true" size={18} />
                         </button>
-                        <button className="btn btn-outline" type="button" aria-label={`Compartir: ${featuredNews.titulo}`}>
-                          <Share2 aria-hidden="true" size={18} />
-                        </button>
-                        <button className="btn btn-outline" type="button" aria-label={`Comentar: ${featuredNews.titulo}`}>
-                          <MessageCircle aria-hidden="true" size={18} />
-                        </button>
                         <Link className="btn btn-primary" href={`/noticias/${featuredNews.slug ?? featuredNews.id}`}>
                           Leer noticia completa
                         </Link>
+                        <span className="rounded-lg bg-[var(--mist)] px-3 py-2 text-sm font-bold text-[var(--navy)]">
+                          {activeNewsIndex + 1} de {filteredNews.length}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </article>
-
-                <div className="grid gap-4">
-                  {filteredNews.map((item, index) => (
-                    <Link
-                      className={`card block p-4 text-left no-underline transition hover:-translate-y-1 hover:shadow-xl ${
-                        index === activeNewsIndex ? "border-[#FF6B35] ring-2 ring-[#FF6B35]/30" : ""
-                      }`}
-                      href={`/noticias/${item.slug ?? item.id}`}
-                      key={item.id}
-                    >
-                      <span className="text-sm font-black text-[var(--orange)]">{item.categoria}</span>
-                      <h3 className="mt-2 text-lg font-black text-[var(--navy)]">{item.titulo}</h3>
-                      <p className="mt-2 text-sm text-[var(--muted)]">
-                        {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Leer noticia"}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
               </div>
             ) : (
               <p className="mt-8 rounded-lg border border-[var(--line)] bg-white p-5 font-bold text-[var(--navy)]">
