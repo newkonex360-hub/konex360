@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ExternalLink } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
 
@@ -44,20 +47,54 @@ async function getArticle(slug: string): Promise<ArticleResult> {
   };
 }
 
-function renderContent(content: string | null) {
+function MarkdownArticleContent({ content }: { content: string | null }) {
   if (!content) {
     return <p>No hay contenido completo disponible para este articulo.</p>;
   }
 
-  return content
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => (
-      <p className="whitespace-pre-line break-words" key={block}>
-        {block}
-      </p>
-    ));
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSanitize]}
+      components={{
+        h1: ({ children }) => (
+          <h2 className="mt-10 text-3xl font-black leading-tight text-[var(--navy)] md:text-4xl">{children}</h2>
+        ),
+        h2: ({ children }) => (
+          <h2 className="mt-10 text-2xl font-black leading-tight text-[var(--navy)] md:text-3xl">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="mt-8 text-xl font-black leading-tight text-[#087F7A] md:text-2xl">{children}</h3>
+        ),
+        p: ({ children }) => <p className="mt-5 break-words text-lg leading-8 text-[var(--ink)]">{children}</p>,
+        ul: ({ children }) => <ul className="mt-5 list-disc space-y-2 pl-6 text-lg leading-8 text-[var(--ink)]">{children}</ul>,
+        ol: ({ children }) => <ol className="mt-5 list-decimal space-y-2 pl-6 text-lg leading-8 text-[var(--ink)]">{children}</ol>,
+        li: ({ children }) => <li className="pl-1">{children}</li>,
+        a: ({ children, href }) => (
+          <a className="font-bold text-[var(--navy)] underline decoration-[#FF6B35] decoration-2 underline-offset-4" href={href} target="_blank" rel="noreferrer">
+            {children}
+          </a>
+        ),
+        img: ({ alt, src, title }) => (
+          <img
+            src={src ?? ""}
+            alt={alt ?? ""}
+            title={title}
+            loading="lazy"
+            className="my-8 max-h-[560px] w-full rounded-lg border border-[var(--line)] object-cover shadow-lg"
+          />
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="mt-6 border-l-4 border-l-[#FF6B35] bg-[var(--mist)] p-5 text-lg font-bold leading-8 text-[var(--navy)]">
+            {children}
+          </blockquote>
+        ),
+        strong: ({ children }) => <strong className="font-black text-[var(--navy)]">{children}</strong>
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -108,7 +145,9 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                   <h1 className="mt-5 text-4xl font-black leading-tight text-[var(--navy)] md:text-5xl">{article.titulo}</h1>
                   {article.resumen ? <p className="mt-5 text-xl leading-relaxed text-[var(--muted)]">{article.resumen}</p> : null}
 
-                  <div className="mt-8 space-y-5 text-lg leading-8 text-[var(--ink)]">{renderContent(article.contenido)}</div>
+                  <div className="mt-8">
+                    <MarkdownArticleContent content={article.contenido} />
+                  </div>
 
                   {article.fuente_url ? (
                     <div className="mt-10 border-t border-[var(--line)] pt-6">
