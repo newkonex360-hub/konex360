@@ -1,28 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, CalendarDays, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
-
-export const dynamic = "force-dynamic";
-
-type Article = {
-  id: string;
-  slug: string | null;
-  titulo: string;
-  resumen: string | null;
-  contenido: string | null;
-  categoria: string | null;
-  imagen_url: string | null;
-  estado: string;
-  fuente_url: string | null;
-  publicado_en: string | null;
-};
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { articleSelectFields, getLocalizedArticleField, type LocalizedArticle } from "@/lib/articles";
+import { normalizeLanguage } from "@/lib/i18n";
 
 type ArticleResult = {
-  article: Article | null;
+  article: LocalizedArticle | null;
   error: string | null;
 };
 
@@ -36,20 +28,22 @@ async function getArticle(slug: string): Promise<ArticleResult> {
 
   const { data, error } = await supabase
     .from("articulos")
-    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado,fuente_url,publicado_en")
+    .select(articleSelectFields)
     .eq("slug", slug)
     .eq("estado", "publicado")
     .maybeSingle();
 
   return {
-    article: data ?? null,
+    article: (data ?? null) as unknown as LocalizedArticle | null,
     error: error ? `${error.message}${error.details ? ` Detalles: ${error.details}` : ""}` : null
   };
 }
 
 function MarkdownArticleContent({ content }: { content: string | null }) {
+  const { t } = useTranslation();
+
   if (!content) {
-    return <p>No hay contenido completo disponible para este articulo.</p>;
+    return <p>{t("articles.noContent")}</p>;
   }
 
   return (
@@ -97,9 +91,24 @@ function MarkdownArticleContent({ content }: { content: string | null }) {
   );
 }
 
-export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const { article, error } = await getArticle(decodeURIComponent(slug));
+export default function ArticleDetailPage() {
+  const params = useParams<{ slug: string }>();
+  const { t, i18n } = useTranslation();
+  const language = normalizeLanguage(i18n.language);
+  const [article, setArticle] = useState<LocalizedArticle | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const slug = decodeURIComponent(params.slug);
+
+  useEffect(() => {
+    getArticle(slug).then((result) => {
+      setArticle(result.article);
+      setError(result.error);
+    });
+  }, [slug]);
+
+  const title = article ? getLocalizedArticleField(article, "titulo", language) : null;
+  const summary = article ? getLocalizedArticleField(article, "resumen", language) : null;
+  const content = article ? getLocalizedArticleField(article, "contenido", language) : null;
 
   return (
     <>
@@ -109,26 +118,26 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
           <div className="container">
             <Link className="btn btn-outline bg-white" href="/noticias">
               <ArrowLeft aria-hidden="true" size={18} />
-              Volver a noticias
+              {t("common.back")}
             </Link>
 
             {error ? (
               <div className="mt-6 rounded-lg border border-[#C1121F] bg-white p-5 text-[#8A0F18]" role="alert">
-                <p className="font-black">Error de Supabase</p>
+                <p className="font-black">{t("common.supabaseError")}</p>
                 <p className="mt-2 text-sm">{error}</p>
               </div>
             ) : null}
 
             {!article ? (
               <div className="card mt-8 p-6">
-                <p className="eyebrow">Noticias</p>
-                <h1 className="mt-3 text-3xl font-black text-[var(--navy)]">Artículo no encontrado</h1>
-                <p className="mt-3 text-[var(--muted)]">El articulo no existe, no esta publicado o el enlace no es correcto.</p>
+                <p className="eyebrow">{t("nav.news")}</p>
+                <h1 className="mt-3 text-3xl font-black text-[var(--navy)]">{t("articles.notFound")}</h1>
+                <p className="mt-3 text-[var(--muted)]">{t("articles.notFoundText")}</p>
               </div>
             ) : (
               <article className="mt-8 overflow-hidden rounded-lg border border-[var(--line)] bg-white">
                 {article.imagen_url ? (
-                  <img src={article.imagen_url} alt={article.titulo} className="max-h-[520px] w-full object-cover" />
+                  <img src={article.imagen_url} alt={title?.text ?? ""} className="max-h-[520px] w-full object-cover" />
                 ) : null}
 
                 <div className="mx-auto w-full max-w-3xl px-5 py-8 md:px-8 lg:py-12">
@@ -142,18 +151,23 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                     </span>
                   </div>
 
-                  <h1 className="mt-5 text-4xl font-black leading-tight text-[var(--navy)] md:text-5xl">{article.titulo}</h1>
-                  {article.resumen ? <p className="mt-5 text-xl leading-relaxed text-[var(--muted)]">{article.resumen}</p> : null}
+                  <h1 className="mt-5 text-4xl font-black leading-tight text-[var(--navy)] md:text-5xl">{title?.text}</h1>
+                  {summary?.text ? <p className="mt-5 text-xl leading-relaxed text-[var(--muted)]">{summary.text}</p> : null}
+                  {title?.isFallback || summary?.isFallback || content?.isFallback ? (
+                    <span className="mt-5 inline-flex rounded-lg bg-[var(--mist)] px-3 py-2 text-sm font-bold text-[var(--navy)]">
+                      {t("common.translationSoon")}
+                    </span>
+                  ) : null}
 
                   <div className="mt-8">
-                    <MarkdownArticleContent content={article.contenido} />
+                    <MarkdownArticleContent content={content?.text ?? null} />
                   </div>
 
                   {article.fuente_url ? (
                     <div className="mt-10 border-t border-[var(--line)] pt-6">
                       <a className="btn btn-outline" href={article.fuente_url} target="_blank" rel="noreferrer">
                         <ExternalLink aria-hidden="true" size={18} />
-                        Ver fuente original
+                        {t("articles.source")}
                       </a>
                     </div>
                   ) : null}

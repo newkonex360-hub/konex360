@@ -1,29 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import { Newspaper, Search, Share2 } from "lucide-react";
 import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { articleSelectFields, getLocalizedArticleField, type LocalizedArticle } from "@/lib/articles";
+import { normalizeLanguage } from "@/lib/i18n";
 
-export const dynamic = "force-dynamic";
-
-type Article = {
-  id: string;
-  slug: string | null;
-  titulo: string;
-  resumen: string;
-  contenido: string | null;
-  categoria: string;
-  imagen_url: string | null;
-  estado: string;
-  fuente_url: string | null;
-  publicado_en: string | null;
-};
-
-type ArticleResult = {
-  articles: Article[];
-  error: string | null;
-};
-
-async function getArticles(): Promise<ArticleResult> {
+async function getArticles(): Promise<{ articles: LocalizedArticle[]; error: string | null }> {
   if (!supabase) {
     return {
       articles: [],
@@ -33,19 +19,32 @@ async function getArticles(): Promise<ArticleResult> {
 
   const { data, error } = await supabase
     .from("articulos")
-    .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado,fuente_url,publicado_en")
+    .select(articleSelectFields)
     .eq("estado", "publicado")
     .order("publicado_en", { ascending: false, nullsFirst: false });
 
   return {
-    articles: data ?? [],
+    articles: (data ?? []) as unknown as LocalizedArticle[],
     error: error ? `${error.message}${error.details ? ` Detalles: ${error.details}` : ""}` : null
   };
 }
 
-export default async function NoticiasPage() {
-  const { articles, error } = await getArticles();
+export default function NoticiasPage() {
+  const { t, i18n } = useTranslation();
+  const language = normalizeLanguage(i18n.language);
+  const [articles, setArticles] = useState<LocalizedArticle[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getArticles().then((result) => {
+      setArticles(result.articles);
+      setError(result.error);
+    });
+  }, []);
+
   const featured = articles[0];
+  const featuredTitle = featured ? getLocalizedArticleField(featured, "titulo", language) : null;
+  const featuredSummary = featured ? getLocalizedArticleField(featured, "resumen", language) : null;
 
   return (
     <>
@@ -54,28 +53,28 @@ export default async function NoticiasPage() {
         <section className="section bg-[var(--mist)]">
           <div className="container">
             <div className="section-heading">
-              <p className="eyebrow">Noticias</p>
-              <h1 className="h2">Noticias publicadas para la comunidad Konex360</h1>
+              <p className="eyebrow">{t("nav.news")}</p>
+              <h1 className="h2">{t("news.heading")}</h1>
               <p className="lead">
-                Informacion revisada por el equipo antes de publicarse. Los articulos enlazan siempre a sus fuentes cuando corresponda.
+                {t("news.lead")}
               </p>
             </div>
 
             <div className="mt-8 flex flex-col gap-4 rounded-lg border border-[var(--line)] bg-white p-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3 font-black text-[var(--navy)]">
                 <Newspaper aria-hidden="true" />
-                Ultimas noticias publicadas
+                {t("news.verified")}
               </div>
               <label className="relative block min-w-64">
-                <span className="sr-only">Buscar noticias</span>
+                <span className="sr-only">{t("common.searchNews")}</span>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" aria-hidden="true" size={18} />
-                <input className="w-full rounded-lg border border-[var(--line)] bg-white py-3 pl-10 pr-3" placeholder="Buscar proximamente" disabled />
+                <input className="w-full rounded-lg border border-[var(--line)] bg-white py-3 pl-10 pr-3" placeholder={t("common.searchNews")} disabled />
               </label>
             </div>
 
             {error ? (
               <div className="mt-6 rounded-lg border border-[#C1121F] bg-white p-5 text-[#8A0F18]" role="alert">
-                <p className="font-black">Error de Supabase</p>
+                <p className="font-black">{t("common.supabaseError")}</p>
                 <p className="mt-2 text-sm">{error}</p>
               </div>
             ) : null}
@@ -85,7 +84,7 @@ export default async function NoticiasPage() {
                 <div className="grid md:grid-cols-[1.05fr_0.95fr]">
                   <div className="relative min-h-[320px] bg-[#0B3C5D]">
                     {featured.imagen_url ? (
-                      <img src={featured.imagen_url} alt={featured.titulo} className="absolute inset-0 h-full w-full object-cover" />
+                      <img src={featured.imagen_url} alt={featuredTitle?.text ?? ""} className="absolute inset-0 h-full w-full object-cover" />
                     ) : null}
                     <div className="absolute inset-0 bg-[#0B3C5D]/50" />
                     <div className="relative flex h-full min-h-[320px] items-end p-6 text-white">
@@ -93,40 +92,53 @@ export default async function NoticiasPage() {
                     </div>
                   </div>
                   <div className="p-6">
-                    <p className="eyebrow">Destacada</p>
-                    <h2 className="mt-3 text-3xl font-black leading-tight text-[var(--navy)]">{featured.titulo}</h2>
-                    <p className="mt-4 text-[var(--muted)]">{featured.resumen}</p>
+                    <p className="eyebrow">{t("articles.featured")}</p>
+                    <h2 className="mt-3 text-3xl font-black leading-tight text-[var(--navy)]">{featuredTitle?.text}</h2>
+                    <p className="mt-4 text-[var(--muted)]">{featuredSummary?.text}</p>
+                    {featuredTitle?.isFallback || featuredSummary?.isFallback ? (
+                      <span className="mt-4 inline-flex rounded-lg bg-[var(--mist)] px-3 py-2 text-sm font-bold text-[var(--navy)]">
+                        {t("common.translationSoon")}
+                      </span>
+                    ) : null}
                     <p className="mt-5 text-sm font-bold text-[var(--muted)]">
-                      {featured.publicado_en ? new Date(featured.publicado_en).toLocaleDateString("es-ES") : "Leer noticia completa"}
+                      {featured.publicado_en ? new Date(featured.publicado_en).toLocaleDateString("es-ES") : t("common.readFullNews")}
                     </p>
                   </div>
                 </div>
               </Link>
             ) : (
               <p className="mt-8 rounded-lg border border-[var(--line)] bg-white p-5 font-bold text-[var(--navy)]">
-                No hay noticias disponibles.
+                {t("common.noNews")}
               </p>
             )}
 
             <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {articles.slice(1).map((article) => (
+              {articles.slice(1).map((article) => {
+                const title = getLocalizedArticleField(article, "titulo", language);
+                const summary = getLocalizedArticleField(article, "resumen", language);
+                return (
                 <Link
                   className="card block overflow-hidden no-underline transition hover:-translate-y-1 hover:shadow-xl"
                   href={`/noticias/${article.slug ?? article.id}`}
                   key={article.id}
                 >
-                  {article.imagen_url ? <img src={article.imagen_url} alt={article.titulo} className="h-44 w-full object-cover" /> : null}
+                  {article.imagen_url ? <img src={article.imagen_url} alt={title.text} className="h-44 w-full object-cover" /> : null}
                   <div className="p-5">
                     <span className="text-sm font-black text-[var(--orange)]">{article.categoria}</span>
-                    <h2 className="mt-2 text-xl font-black text-[var(--navy)]">{article.titulo}</h2>
-                    <p className="mt-3 text-sm text-[var(--muted)]">{article.resumen}</p>
+                    <h2 className="mt-2 text-xl font-black text-[var(--navy)]">{title.text}</h2>
+                    <p className="mt-3 text-sm text-[var(--muted)]">{summary.text}</p>
+                    {title.isFallback || summary.isFallback ? (
+                      <span className="mt-3 inline-flex rounded-lg bg-[var(--mist)] px-2 py-1 text-xs font-bold text-[var(--navy)]">
+                        {t("common.translationSoon")}
+                      </span>
+                    ) : null}
                     <span className="btn btn-outline mt-5" aria-label={`Abrir ${article.titulo}`}>
                       <Share2 aria-hidden="true" size={18} />
-                      Leer noticia
+                      {t("common.readMore")}
                     </span>
                   </div>
                 </Link>
-              ))}
+              )})}
             </div>
           </div>
         </section>

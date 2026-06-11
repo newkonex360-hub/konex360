@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { CircleCheck, CircleX, Flag, HeartHandshake, Megaphone } from "lucide-react";
 import { PublicHeader } from "@/app/_components/PublicHeader";
+import { T } from "@/app/_components/T";
 
 const facts = [
   "Son superficies con relieve que se detectan con baston blanco o con los pies.",
@@ -36,20 +37,20 @@ export default function LotsePage() {
           <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#0B3C5D] via-[#0B3C5D]/86 to-transparent" />
           <div className="container relative grid min-h-[86vh] items-center gap-10 py-20 lg:grid-cols-[1.05fr_0.95fr]">
             <div>
-              <p className="eyebrow text-[#FFB199]">Campana Lotse</p>
-              <h1 className="mt-4 text-4xl font-black leading-tight md:text-6xl">Lotse: Pequenas acciones, gran impacto</h1>
+              <p className="eyebrow text-[#FFB199]"><T k="nav.lotse" /></p>
+              <h1 className="mt-4 text-4xl font-black leading-tight md:text-6xl"><T k="lotse.title" /></h1>
               <p className="mt-6 text-lg text-white/88 md:text-2xl">
-                Respetar las guias podotactiles es respetar la independencia, la seguridad y la dignidad de miles de personas.
+                <T k="lotse.subtitle" />
               </p>
               <a className="btn btn-primary mt-8" href="#campana">
                 <Megaphone aria-hidden="true" size={18} />
-                Conocer la campana
+                <T k="lotse.cta" />
               </a>
             </div>
 
             <div className="justify-self-center rounded-lg border border-white/20 bg-white p-5 text-[#0B3C5D] shadow-2xl">
               <Image src="/lotse-mascot.png" alt="Mascota oficial Lotse." width={360} height={360} className="aspect-square w-64 rounded-lg object-cover md:w-80" />
-              <p className="mt-4 text-center text-xl font-black">LOTSE muestra el camino</p>
+              <p className="mt-4 text-center text-xl font-black"><T k="lotse.mascot" /></p>
             </div>
           </div>
         </section>
@@ -57,9 +58,9 @@ export default function LotsePage() {
         <section id="campana" className="section bg-white">
           <div className="container grid gap-10 lg:grid-cols-[0.85fr_1.15fr]">
             <div className="section-heading">
-              <p className="eyebrow">Por que existen</p>
-              <h2 className="h2">Las guias podotactiles son orientacion, seguridad y autonomia</h2>
-              <p className="lead">Son una herramienta urbana clave para personas con discapacidad visual.</p>
+              <p className="eyebrow"><T k="lotse.why" /></p>
+              <h2 className="h2"><T k="lotse.whyHeading" /></h2>
+              <p className="lead"><T k="lotse.whyLead" /></p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {facts.map((fact, index) => (
@@ -78,8 +79,8 @@ export default function LotsePage() {
         <section className="section bg-[var(--mist)]">
           <div className="container">
             <div className="section-heading">
-              <p className="eyebrow">Que no debemos hacer</p>
-              <h2 className="h2">No bloquees el camino</h2>
+              <p className="eyebrow"><T k="lotse.donts" /></p>
+              <h2 className="h2"><T k="lotse.dontsHeading" /></h2>
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               {donts.map((item) => (
@@ -95,8 +96,8 @@ export default function LotsePage() {
         <section className="section bg-white">
           <div className="container">
             <div className="section-heading">
-              <p className="eyebrow">Que debemos hacer</p>
-              <h2 className="h2">Pequenos gestos hacen una ciudad mas segura</h2>
+              <p className="eyebrow"><T k="lotse.dos" /></p>
+              <h2 className="h2"><T k="lotse.dosHeading" /></h2>
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               {dos.map((item) => (
@@ -113,17 +114,17 @@ export default function LotsePage() {
           <div className="container grid gap-5 md:grid-cols-2">
             <article className="rounded-lg border border-white/20 p-6">
               <HeartHandshake aria-hidden="true" />
-              <h2 className="mt-4 text-2xl font-black">Mensaje para escuelas</h2>
-              <p className="mt-3 text-white/82">Estas lineas ayudan a las personas a encontrar su camino.</p>
+              <h2 className="mt-4 text-2xl font-black"><T k="lotse.schools" /></h2>
+              <p className="mt-3 text-white/82"><T k="lotse.schoolsText" /></p>
             </article>
             <article className="rounded-lg border border-white/20 p-6">
               <HeartHandshake aria-hidden="true" />
-              <h2 className="mt-4 text-2xl font-black">Mensaje para nuevos inmigrantes</h2>
-              <p className="mt-3 text-white/82">En Alemania, estas guias son parte de la accesibilidad urbana. Respetarlas es convivir mejor.</p>
+              <h2 className="mt-4 text-2xl font-black"><T k="lotse.newcomers" /></h2>
+              <p className="mt-3 text-white/82"><T k="lotse.newcomersText" /></p>
             </article>
           </div>
           <div className="container mt-10 border-t border-white/20 pt-8">
-            <p className="text-2xl font-black">Una ciudad accesible beneficia a todos.</p>
+            <p className="text-2xl font-black"><T k="lotse.footer" /></p>
           </div>
         </section>
       </main>

@@ -21,7 +21,6 @@ import {
   HandHeart,
   HeartHandshake,
   Home,
-  Languages,
   MapPin,
   Megaphone,
   Newspaper,
@@ -31,30 +30,12 @@ import {
   UsersRound
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/app/_components/LanguageSelector";
+import { articleSelectFields, getLocalizedArticleField, type LocalizedArticle } from "@/lib/articles";
+import { normalizeLanguage } from "@/lib/i18n";
 
-const languages = [
-  { code: "es", label: "Español" },
-  { code: "de", label: "Deutsch" },
-  { code: "en", label: "English" },
-  { code: "ar", label: "Árabe" },
-  { code: "ru", label: "Ruso" },
-  { code: "uk", label: "Ucraniano" }
-];
-
-const newsCategories = ["Leipzig", "Educación", "Empleo", "Vivienda", "Salud", "Integración"];
-
-type Article = {
-  id: string;
-  slug: string | null;
-  titulo: string;
-  resumen: string;
-  contenido: string | null;
-  categoria: string;
-  imagen_url: string | null;
-  estado: string;
-  fuente_url: string | null;
-  publicado_en: string | null;
-};
+const newsCategoryKeys = ["Leipzig", "nav.integration", "nav.recycling", "Empleo", "Vivienda", "Salud"];
 
 type PublishedTransportAlert = {
   id: string;
@@ -185,18 +166,15 @@ const events = [
 ];
 
 export default function HomePage() {
+  const { t, i18n } = useTranslation();
+  const language = normalizeLanguage(i18n.language);
   const [query, setQuery] = useState("");
   const [contrast, setContrast] = useState(false);
   const [largeText, setLargeText] = useState(false);
   const [activeNews, setActiveNews] = useState(0);
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<LocalizedArticle[]>([]);
   const [supabaseArticleError, setSupabaseArticleError] = useState<string | null>(null);
   const [publishedAlerts, setPublishedAlerts] = useState<PublishedTransportAlert[]>([]);
-
-  useEffect(() => {
-    document.documentElement.lang = "es";
-    document.documentElement.dir = "ltr";
-  }, []);
 
   useEffect(() => {
     document.body.classList.toggle("high-contrast", contrast);
@@ -217,7 +195,7 @@ export default function HomePage() {
       const [articlesResult, alertResult] = await Promise.all([
         client
           .from("articulos")
-          .select("id,titulo,slug,resumen,contenido,categoria,imagen_url,estado,fuente_url,publicado_en")
+          .select(articleSelectFields)
           .eq("estado", "publicado")
           .order("publicado_en", { ascending: false, nullsFirst: false })
           .limit(8),
@@ -236,7 +214,7 @@ export default function HomePage() {
       }
 
       if (articlesResult.data) {
-        setArticles(articlesResult.data);
+        setArticles(articlesResult.data as unknown as LocalizedArticle[]);
         setSupabaseArticleError(null);
       }
 
@@ -261,11 +239,17 @@ export default function HomePage() {
   const filteredNews = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return articles;
-    return articles.filter((item) => `${item.categoria} ${item.titulo} ${item.resumen}`.toLowerCase().includes(normalized));
-  }, [articles, query]);
+    return articles.filter((item) => {
+      const title = getLocalizedArticleField(item, "titulo", language).text;
+      const summary = getLocalizedArticleField(item, "resumen", language).text;
+      return `${item.categoria ?? ""} ${title} ${summary}`.toLowerCase().includes(normalized);
+    });
+  }, [articles, language, query]);
 
   const activeNewsIndex = filteredNews.length ? Math.min(activeNews, filteredNews.length - 1) : 0;
   const featuredNews = filteredNews[activeNewsIndex];
+  const featuredTitle = featuredNews ? getLocalizedArticleField(featuredNews, "titulo", language) : null;
+  const featuredSummary = featuredNews ? getLocalizedArticleField(featuredNews, "resumen", language) : null;
 
   useEffect(() => {
     setActiveNews(0);
@@ -288,7 +272,7 @@ export default function HomePage() {
   return (
     <>
       <a className="skip-link" href="#contenido">
-        Saltar al contenido
+        {t("common.readMore")}
       </a>
 
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-white/20 bg-[#0b3c5d]/95 text-white backdrop-blur">
@@ -299,12 +283,12 @@ export default function HomePage() {
 
           <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
             {[
-              ["Noticias", "/noticias"],
-              ["Integración", "/integracion"],
-              ["Campaña Lotse", "/campana-lotse"],
-              ["Transporte", "/transporte"],
-              ["Directorio", "#directorio"],
-              ["Eventos", "/eventos"]
+              [t("nav.news"), "/noticias"],
+              [t("nav.integration"), "/integracion"],
+              [t("nav.lotse"), "/campana-lotse"],
+              [t("nav.transport"), "/transporte"],
+              [t("nav.directory"), "#directorio"],
+              [t("nav.events"), "/eventos"]
             ].map(([label, target]) => (
               <a className="rounded-lg px-3 py-2 text-sm font-bold text-white/90 hover:bg-white/10" href={target} key={target}>
                 {label}
@@ -312,14 +296,7 @@ export default function HomePage() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 rounded-lg bg-white px-2 py-1 text-[#0B3C5D]">
-            <Languages aria-hidden="true" size={18} />
-            <select className="bg-white text-sm font-bold" aria-label="Selector de idioma, próximamente">
-              {languages.map((item) => (
-                <option key={item.code}>{item.label}</option>
-              ))}
-            </select>
-          </div>
+          <LanguageSelector />
         </div>
       </header>
 
@@ -337,23 +314,23 @@ export default function HomePage() {
           <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-[#0B3C5D] via-[#0B3C5D]/82 to-transparent" />
           <div className="container relative flex min-h-[calc(92vh-5rem)] items-center py-16">
             <div className="max-w-3xl">
-              <p className="eyebrow text-[#FFB199]">Plataforma comunitaria en Leipzig</p>
+              <p className="eyebrow text-[#FFB199]">{t("home.platform")}</p>
               <h1 className="mt-4 text-5xl font-black leading-[1.02] md:text-7xl">Konex 360</h1>
               <p className="mt-5 text-2xl font-extrabold leading-tight md:text-4xl">
-                Conectando culturas, construyendo comunidad
+                {t("home.slogan")}
               </p>
               <p className="mt-6 max-w-2xl text-lg text-white/88 md:text-xl">
-                Noticias verificadas, recursos de integración, campañas de inclusión y orientación útil para vivir en Leipzig.
+                {t("home.description")}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
                 {[
-                  { label: "Noticias", target: "/noticias", Icon: Newspaper },
-                  { label: "Integración", target: "/integracion", Icon: BookOpen },
-                  { label: "Campaña Lotse", target: "/campana-lotse", Icon: Megaphone },
-                  { label: "Transporte", target: "/transporte", Icon: BusFront },
-                  { label: "Directorio de ayuda", target: "#directorio", Icon: HeartHandshake },
-                  { label: "Eventos", target: "/eventos", Icon: CalendarDays }
+                  { label: t("nav.news"), target: "/noticias", Icon: Newspaper },
+                  { label: t("nav.integration"), target: "/integracion", Icon: BookOpen },
+                  { label: t("nav.lotse"), target: "/campana-lotse", Icon: Megaphone },
+                  { label: t("nav.transport"), target: "/transporte", Icon: BusFront },
+                  { label: t("nav.directory"), target: "#directorio", Icon: HeartHandshake },
+                  { label: t("nav.events"), target: "/eventos", Icon: CalendarDays }
                 ].map(({ label, target, Icon }, index) => (
                   <a className={`btn ${index === 0 ? "btn-primary" : "btn-secondary"}`} href={target} key={target}>
                     <Icon aria-hidden="true" size={19} />
@@ -369,14 +346,14 @@ export default function HomePage() {
           <div className="container flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-sm font-bold text-[var(--navy)]">
               <Accessibility aria-hidden="true" />
-              Accesibilidad WCAG
+              {t("accessibility.title")}
             </div>
             <div className="flex flex-wrap gap-2">
               <button className="btn btn-outline" type="button" onClick={() => setContrast((value) => !value)}>
-                Alto contraste
+                {t("accessibility.contrast")}
               </button>
               <button className="btn btn-outline" type="button" onClick={() => setLargeText((value) => !value)}>
-                Tamaño de letra
+                {t("accessibility.fontSize")}
               </button>
             </div>
           </div>
@@ -385,27 +362,27 @@ export default function HomePage() {
         <section id="noticias" className="section bg-[var(--mist)]">
           <div className="container">
             <div className="section-heading">
-              <p className="eyebrow">Noticias verificadas</p>
-              <h2 className="h2">Información local para tomar mejores decisiones</h2>
+              <p className="eyebrow">{t("news.verified")}</p>
+              <h2 className="h2">{t("news.heading")}</h2>
               <p className="lead">
-                Aquí se mostrarán las noticias aprobadas por el equipo. Mientras conectamos fuentes oficiales, dejamos ejemplos editoriales.
+                {t("news.lead")}
               </p>
             </div>
 
             <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap gap-2">
-                {newsCategories.map((category) => (
+                {newsCategoryKeys.map((category) => (
                   <button className="rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm font-bold text-[var(--navy)]" key={category}>
-                    {category}
+                    {category.includes(".") ? t(category) : category}
                   </button>
                 ))}
               </div>
               <label className="relative block min-w-64">
-                <span className="sr-only">Buscar noticias</span>
+                <span className="sr-only">{t("common.searchNews")}</span>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" aria-hidden="true" size={18} />
                 <input
                   className="w-full rounded-lg border border-[var(--line)] bg-white py-3 pl-10 pr-3"
-                  placeholder="Buscar noticias"
+                  placeholder={t("common.searchNews")}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
@@ -414,7 +391,7 @@ export default function HomePage() {
 
             {supabaseArticleError ? (
               <div className="mt-6 rounded-lg border border-[#C1121F] bg-white p-5 text-[#8A0F18]" role="alert">
-                <p className="font-black">Error de Supabase</p>
+                <p className="font-black">{t("common.supabaseError")}</p>
                 <p className="mt-2 text-sm">{supabaseArticleError}</p>
               </div>
             ) : null}
@@ -427,21 +404,26 @@ export default function HomePage() {
                       {featuredNews.imagen_url ? (
                         <img
                           src={featuredNews.imagen_url}
-                          alt={featuredNews.titulo}
+                          alt={featuredTitle?.text ?? ""}
                           className="absolute inset-0 h-full w-full object-cover opacity-48"
                         />
                       ) : null}
                       <div className="absolute inset-0 bg-[#0B3C5D]/66" />
                       <div className="relative flex min-h-[300px] flex-col justify-end lg:min-h-[496px]">
                         <span className="w-fit rounded-lg bg-[#FF6B35] px-3 py-1 text-sm font-black">{featuredNews.categoria}</span>
-                        <h3 className="mt-6 max-w-3xl text-4xl font-black leading-tight md:text-6xl">{featuredNews.titulo}</h3>
+                        <h3 className="mt-6 max-w-3xl text-4xl font-black leading-tight md:text-6xl">{featuredTitle?.text}</h3>
                       </div>
                     </div>
                     <div className="flex flex-col justify-between bg-white p-6 md:p-8">
                       <div>
-                        <p className="eyebrow">Noticias</p>
-                        <h4 className="mt-3 text-3xl font-black leading-tight text-[var(--navy)]">Información para la comunidad</h4>
-                        <p className="mt-5 text-lg leading-8 text-[var(--muted)]">{featuredNews.resumen}</p>
+                        <p className="eyebrow">{t("nav.news")}</p>
+                        <h4 className="mt-3 text-3xl font-black leading-tight text-[var(--navy)]">{t("news.community")}</h4>
+                        <p className="mt-5 text-lg leading-8 text-[var(--muted)]">{featuredSummary?.text}</p>
+                        {featuredTitle?.isFallback || featuredSummary?.isFallback ? (
+                          <span className="mt-4 inline-flex rounded-lg bg-[var(--mist)] px-3 py-2 text-sm font-bold text-[var(--navy)]">
+                            {t("common.translationSoon")}
+                          </span>
+                        ) : null}
                       </div>
                       <div className="mt-8 flex flex-wrap items-center gap-2">
                         <button className="btn btn-outline" type="button" onClick={showPreviousNews} aria-label="Noticia anterior">
@@ -451,7 +433,7 @@ export default function HomePage() {
                           <ArrowRight aria-hidden="true" size={18} />
                         </button>
                         <Link className="btn btn-primary" href={`/noticias/${featuredNews.slug ?? featuredNews.id}`}>
-                          Leer noticia completa
+                          {t("common.readFullNews")}
                         </Link>
                         <span className="rounded-lg bg-[var(--mist)] px-3 py-2 text-sm font-bold text-[var(--navy)]">
                           {activeNewsIndex + 1} de {filteredNews.length}
@@ -463,7 +445,7 @@ export default function HomePage() {
               </div>
             ) : (
               <p className="mt-8 rounded-lg border border-[var(--line)] bg-white p-5 font-bold text-[var(--navy)]">
-                No hay noticias disponibles.
+                {t("common.noNews")}
               </p>
             )}
           </div>
@@ -472,10 +454,10 @@ export default function HomePage() {
         <section id="integracion" className="section bg-white">
           <div className="container">
             <div className="section-heading">
-              <p className="eyebrow">Integración</p>
-              <h2 className="h2">Más espacios para orientarse, aprender y vivir mejor</h2>
+              <p className="eyebrow">{t("nav.integration")}</p>
+              <h2 className="h2">{t("integration.heading")}</h2>
               <p className="lead">
-                Idioma, vivienda, empleo, salud, reciclaje, escuela, convivencia y apoyo cuando algo no está claro.
+                {t("integration.lead")}
               </p>
             </div>
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -491,8 +473,8 @@ export default function HomePage() {
             </div>
             <div className="mt-10 rounded-lg border border-[var(--line)] bg-[var(--mist)] p-5">
               <div className="section-heading">
-                <p className="eyebrow">Integración</p>
-                <h3 className="mt-2 text-2xl font-black text-[var(--navy)]">Material práctico para la vida diaria</h3>
+                <p className="eyebrow">{t("nav.integration")}</p>
+                <h3 className="mt-2 text-2xl font-black text-[var(--navy)]">{t("integration.material")}</h3>
               </div>
               <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {recyclingIntegration.map((item) => (
@@ -751,19 +733,27 @@ export default function HomePage() {
               <h2 className="h2">Lo más reciente aprobado por el equipo</h2>
             </div>
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
-              {filteredNews.slice(0, 3).map((item) => (
+              {filteredNews.slice(0, 3).map((item) => {
+                const title = getLocalizedArticleField(item, "titulo", language);
+                const summary = getLocalizedArticleField(item, "resumen", language);
+                return (
                 <Link className="card block p-5 no-underline transition hover:-translate-y-1 hover:shadow-xl" href={`/noticias/${item.slug ?? item.id}`} key={item.id}>
                   <div className="flex items-center gap-3">
                     <Clock3 className="text-[var(--orange)]" aria-hidden="true" />
                     <span className="text-sm font-black text-[var(--orange)]">{item.categoria}</span>
                   </div>
-                  <h3 className="mt-4 text-xl font-black text-[var(--navy)]">{item.titulo}</h3>
-                  <p className="mt-3 text-[var(--muted)]">{item.resumen}</p>
+                  <h3 className="mt-4 text-xl font-black text-[var(--navy)]">{title.text}</h3>
+                  <p className="mt-3 text-[var(--muted)]">{summary.text}</p>
+                  {title.isFallback || summary.isFallback ? (
+                    <span className="mt-3 inline-flex rounded-lg bg-white px-2 py-1 text-xs font-bold text-[var(--navy)]">
+                      {t("common.translationSoon")}
+                    </span>
+                  ) : null}
                   <p className="mt-4 text-sm font-bold text-[var(--muted)]">
-                    {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : "Leer noticia"}
+                    {item.publicado_en ? new Date(item.publicado_en).toLocaleDateString("es-ES") : t("common.readMore")}
                   </p>
                 </Link>
-              ))}
+              )})}
             </div>
           </div>
         </section>
