@@ -32,7 +32,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useTranslation } from "react-i18next";
 import { LanguageSelector } from "@/app/_components/LanguageSelector";
-import { articleSelectFields, getLocalizedArticleField, type LocalizedArticle } from "@/lib/articles";
+import { getLocalizedArticleField, queryArticlesWithFallback, type LocalizedArticle } from "@/lib/articles";
 import { normalizeLanguage } from "@/lib/i18n";
 
 const newsCategoryKeys = ["Leipzig", "nav.integration", "nav.recycling", "Empleo", "Vivienda", "Salud"];
@@ -193,12 +193,14 @@ export default function HomePage() {
 
     const loadPublishedContent = async () => {
       const [articlesResult, alertResult] = await Promise.all([
-        client
-          .from("articulos")
-          .select(articleSelectFields)
-          .eq("estado", "publicado")
-          .order("publicado_en", { ascending: false, nullsFirst: false })
-          .limit(8),
+        queryArticlesWithFallback<LocalizedArticle[]>((selectFields) =>
+          client
+            .from("articulos")
+            .select(selectFields)
+            .eq("estado", "publicado")
+            .order("publicado_en", { ascending: false, nullsFirst: false })
+            .limit(8)
+        ),
         client
           .from("transport_alerts")
           .select("id,affected_line,type,reason,summary_simple,source,original_url")
@@ -207,11 +209,7 @@ export default function HomePage() {
           .limit(8)
       ]);
 
-      if (articlesResult.error) {
-        setSupabaseArticleError(
-          `${articlesResult.error.message}${articlesResult.error.details ? ` Detalles: ${articlesResult.error.details}` : ""}`
-        );
-      }
+      setSupabaseArticleError(articlesResult.error);
 
       if (articlesResult.data) {
         setArticles(articlesResult.data as unknown as LocalizedArticle[]);

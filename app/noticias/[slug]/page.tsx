@@ -10,7 +10,7 @@ import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { articleSelectFields, getLocalizedArticleField, type LocalizedArticle } from "@/lib/articles";
+import { getLocalizedArticleField, queryArticlesWithFallback, type LocalizedArticle } from "@/lib/articles";
 import { normalizeLanguage } from "@/lib/i18n";
 
 type ArticleResult = {
@@ -25,17 +25,20 @@ async function getArticle(slug: string): Promise<ArticleResult> {
       error: "Supabase no esta configurado. Revisa NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
     };
   }
+  const client = supabase;
 
-  const { data, error } = await supabase
-    .from("articulos")
-    .select(articleSelectFields)
-    .eq("slug", slug)
-    .eq("estado", "publicado")
-    .maybeSingle();
+  const { data, error } = await queryArticlesWithFallback<LocalizedArticle>((selectFields) =>
+    client
+      .from("articulos")
+      .select(selectFields)
+      .eq("slug", slug)
+      .eq("estado", "publicado")
+      .maybeSingle()
+  );
 
   return {
     article: (data ?? null) as unknown as LocalizedArticle | null,
-    error: error ? `${error.message}${error.details ? ` Detalles: ${error.details}` : ""}` : null
+    error
   };
 }
 

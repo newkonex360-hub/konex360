@@ -6,7 +6,7 @@ import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { articleSelectFields, getLocalizedArticleField, type LocalizedArticle } from "@/lib/articles";
+import { getLocalizedArticleField, queryArticlesWithFallback, type LocalizedArticle } from "@/lib/articles";
 import { normalizeLanguage } from "@/lib/i18n";
 
 async function getArticles(): Promise<{ articles: LocalizedArticle[]; error: string | null }> {
@@ -16,16 +16,19 @@ async function getArticles(): Promise<{ articles: LocalizedArticle[]; error: str
       error: "Supabase no esta configurado. Revisa NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
     };
   }
+  const client = supabase;
 
-  const { data, error } = await supabase
-    .from("articulos")
-    .select(articleSelectFields)
-    .eq("estado", "publicado")
-    .order("publicado_en", { ascending: false, nullsFirst: false });
+  const { data, error } = await queryArticlesWithFallback<LocalizedArticle[]>((selectFields) =>
+    client
+      .from("articulos")
+      .select(selectFields)
+      .eq("estado", "publicado")
+      .order("publicado_en", { ascending: false, nullsFirst: false })
+  );
 
   return {
     articles: (data ?? []) as unknown as LocalizedArticle[],
-    error: error ? `${error.message}${error.details ? ` Detalles: ${error.details}` : ""}` : null
+    error
   };
 }
 

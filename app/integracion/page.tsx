@@ -6,7 +6,7 @@ import { PublicHeader } from "@/app/_components/PublicHeader";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { articleSelectFields, getLocalizedArticleField, type LocalizedArticle } from "@/lib/articles";
+import { getLocalizedArticleField, queryArticlesWithFallback, type LocalizedArticle } from "@/lib/articles";
 import { normalizeLanguage } from "@/lib/i18n";
 
 const guides = [
@@ -37,17 +37,20 @@ async function getIntegrationArticles(): Promise<ArticleResult> {
       error: "Supabase no esta configurado. Revisa NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY."
     };
   }
+  const client = supabase;
 
-  const { data, error } = await supabase
-    .from("articulos")
-    .select(articleSelectFields)
-    .eq("estado", "publicado")
-    .or("categoria.ilike.integracion,categoria.ilike.integración")
-    .order("publicado_en", { ascending: false, nullsFirst: false });
+  const { data, error } = await queryArticlesWithFallback<LocalizedArticle[]>((selectFields) =>
+    client
+      .from("articulos")
+      .select(selectFields)
+      .eq("estado", "publicado")
+      .or("categoria.ilike.%integracion%,categoria.ilike.%integración%")
+      .order("publicado_en", { ascending: false, nullsFirst: false })
+  );
 
   return {
     articles: (data ?? []) as unknown as LocalizedArticle[],
-    error: error ? `${error.message}${error.details ? ` Detalles: ${error.details}` : ""}` : null
+    error
   };
 }
 
@@ -128,26 +131,28 @@ export default function IntegracionPage() {
                 {articles.map((article) => {
                   const title = getLocalizedArticleField(article, "titulo", language);
                   const summary = getLocalizedArticleField(article, "resumen", language);
+
                   return (
-                  <Link
-                    className="card block overflow-hidden no-underline transition hover:-translate-y-1 hover:shadow-xl"
-                    href={`/noticias/${article.slug ?? article.id}`}
-                    key={article.id}
-                  >
-                    {article.imagen_url ? <img src={article.imagen_url} alt={title.text} className="h-44 w-full object-cover" /> : null}
-                    <div className="p-5">
-                      <span className="text-sm font-black text-[var(--orange)]">{article.categoria}</span>
-                      <h3 className="mt-2 text-xl font-black text-[var(--navy)]">{title.text}</h3>
-                      <p className="mt-3 text-sm text-[var(--muted)]">{summary.text}</p>
-                      {title.isFallback || summary.isFallback ? (
-                        <span className="mt-3 inline-flex rounded-lg bg-[var(--mist)] px-2 py-1 text-xs font-bold text-[var(--navy)]">
-                          {t("common.translationSoon")}
-                        </span>
-                      ) : null}
-                      <span className="btn btn-outline mt-5">{t("common.readMore")}</span>
-                    </div>
-                  </Link>
-                )})}
+                    <Link
+                      className="card block overflow-hidden no-underline transition hover:-translate-y-1 hover:shadow-xl"
+                      href={`/noticias/${article.slug ?? article.id}`}
+                      key={article.id}
+                    >
+                      {article.imagen_url ? <img src={article.imagen_url} alt={title.text} className="h-44 w-full object-cover" /> : null}
+                      <div className="p-5">
+                        <span className="text-sm font-black text-[var(--orange)]">{article.categoria}</span>
+                        <h3 className="mt-2 text-xl font-black text-[var(--navy)]">{title.text}</h3>
+                        <p className="mt-3 text-sm text-[var(--muted)]">{summary.text}</p>
+                        {title.isFallback || summary.isFallback ? (
+                          <span className="mt-3 inline-flex rounded-lg bg-[var(--mist)] px-2 py-1 text-xs font-bold text-[var(--navy)]">
+                            {t("common.translationSoon")}
+                          </span>
+                        ) : null}
+                        <span className="btn btn-outline mt-5">{t("common.readMore")}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-8 rounded-lg border border-[var(--line)] bg-white p-5 font-bold text-[var(--navy)]">
